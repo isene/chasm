@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1b26"/>
+      <stop offset="100%" style="stop-color:#0a0a14"/>
+    </linearGradient>
+    <linearGradient id="abyss" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#bd93f9;stop-opacity:0.65"/>
+      <stop offset="60%" style="stop-color:#7aa2f7;stop-opacity:0.18"/>
+      <stop offset="100%" style="stop-color:#000;stop-opacity:0"/>
+    </linearGradient>
+    <linearGradient id="word-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#7aa2f7"/>
+      <stop offset="100%" style="stop-color:#bd93f9"/>
+    </linearGradient>
+  </defs>
+
+  <circle cx="128" cy="128" r="120" fill="url(#bg)" stroke="url(#word-grad)" stroke-width="3"/>
+
+  <!-- The chasm: two cliff faces with a narrow gap of light between -->
+  <!-- Left cliff -->
+  <path d="M 38 60 L 110 60 L 116 80 L 110 100 L 118 120 L 110 140 L 116 160 L 110 180 L 38 180 Z"
+        fill="#24283b" stroke="#7aa2f7" stroke-width="1.2" opacity="0.95"/>
+  <!-- Right cliff -->
+  <path d="M 218 60 L 146 60 L 140 80 L 146 100 L 138 120 L 146 140 L 140 160 L 146 180 L 218 180 Z"
+        fill="#24283b" stroke="#bd93f9" stroke-width="1.2" opacity="0.95"/>
+  <!-- The gap (the chasm) — gradient from bright at top to abyss at bottom -->
+  <path d="M 110 60 L 116 80 L 110 100 L 118 120 L 110 140 L 116 160 L 110 180 L 146 180 L 140 160 L 146 140 L 138 120 L 146 100 L 140 80 L 146 60 Z"
+        fill="url(#abyss)"/>
+
+  <!-- "high level" label at top of the gap -->
+  <text x="128" y="55" font-family="monospace" font-size="6.5" fill="#565f89" text-anchor="middle">high level</text>
+
+  <!-- "asm" label at the bottom of the descent (inside the gap) -->
+  <text x="128" y="172" font-family="monospace" font-size="7" font-weight="bold" fill="#bd93f9" text-anchor="middle">asm</text>
+
+  <!-- The four CHasm tools as small dots descending into the gap -->
+  <circle cx="128" cy="80"  r="2.5" fill="#9ece6a"/>  <!-- bare (green) -->
+  <circle cx="128" cy="100" r="2.5" fill="#e0af68"/>  <!-- show (orange) -->
+  <circle cx="128" cy="120" r="2.5" fill="#7aa2f7"/>  <!-- glass (blue) -->
+  <circle cx="128" cy="140" r="2.5" fill="#bd93f9"/>  <!-- tile (purple) -->
+
+  <!-- Wordmark -->
+  <text x="128" y="208" font-family="monospace" font-size="28" font-weight="bold"
+        fill="url(#word-grad)" text-anchor="middle" letter-spacing="3">CHasm</text>
+  <text x="128" y="226" font-family="monospace" font-size="7.5" fill="#565f89" text-anchor="middle">CHange to ASM</text>
+</svg>

@@ -9,6 +9,8 @@ direct syscalls, and the X11 wire protocol.
 Each tool is a single static ELF binary. None of them depend on each
 other or on anything else outside the kernel and the X server.
 
+The reason for releasing these tools into the Public Domain is not that you should use them. They are released for inspiration. Your use cases and preferences are different from mine. So instead of installing these and adopt your ways of working to these tools, you should rather: clone the repos, fire up Claude Code, prompt the changes you want and make the tools fit you.
+
 <br clear="left"/>
 
 ## The tools

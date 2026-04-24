@@ -13,6 +13,17 @@ The reason for releasing these tools into the Public Domain is not that you shou
 
 <br clear="left"/>
 
+![CHasm desktop](img/screenshot.png)
+
+Every binary on this screen is x86_64 assembly: **tile** holds the
+layout, **strip** + the **asmites** (the per-segment programs in
+[chasm-bits](https://github.com/isene/chasm-bits)) drive the status
+row, **glass** renders each pane (pseudo-transparency picks up the
+wallpaper), **bare** is the shell behind every prompt, and **show**
+is rendering syntax-highlighted source in both the left and
+bottom-right panes. No libc, no toolkit — the whole desktop talks
+straight to the kernel and the X server.
+
 ## The tools
 
 | Tool | Purpose | Lines | Binary |
@@ -21,9 +32,10 @@ The reason for releasing these tools into the Public Domain is not that you shou
 | **[show](https://github.com/isene/show)**   | Pager / file viewer with syntax highlighting, ESC sanitisation, cat/pane/pipe modes | ~3.5k | ~40KB |
 | **[glass](https://github.com/isene/glass)** | Terminal emulator: X11 wire protocol, kitty graphics, color emoji via XRender, pseudo-transparency, configurable fonts/keys | ~12k | ~110KB |
 | **[tile](https://github.com/isene/tile)**   | Tiling window manager: 10 workspaces, per-workspace tabs, row-of-squares bar with per-tab colour cycling, smart workspace cycling, stash | ~3.5k | ~37KB |
+| **[glyph](https://github.com/isene/glyph)** | TrueType font rasterizer: TTF/OpenType parser, quadratic Bezier flatten, scanline NZW with 4x4 supersample AA, composite glyphs, UTF-8, variable fonts (fvar+gvar+IUP) | ~4.2k | ~37KB |
 
 Stack them all together and you get a complete X session in **under
-350 KB** of executable code, with zero shared libraries to update,
+400 KB** of executable code, with zero shared libraries to update,
 patch, or break.
 
 ## Why?
@@ -56,7 +68,7 @@ Every CHasm tool follows the same conventions:
 ## Build them all
 
 ```bash
-for t in bare show glass tile; do
+for t in bare show glass tile glyph; do
   git clone https://github.com/isene/$t.git
   (cd $t && make)
 done
@@ -80,11 +92,14 @@ would defeat the whole point.
 
 ## Status
 
-All four tools are usable today. tile is the newest and is approaching
-"replace i3 entirely" feature parity. The next major addition is
-`strip` — an X11 status bar with system tray, written in the same pure-
-asm style — which will join the suite when tile lands its multi-monitor
-phase.
+All five tools are usable today. tile is approaching "replace i3
+entirely" feature parity. glyph is the newest — a pure-asm TTF
+rasterizer that already renders OpenType variable fonts (interpolating
+between weight masters via gvar deltas + IUP), with the eventual goal
+of replacing glass's X core bitmap fonts so the whole desktop renders
+TTF without dynamic linking. The next major addition is `strip` — an
+X11 status bar with system tray, written in the same pure-asm style —
+which will join the suite when tile lands its multi-monitor phase.
 
 ## License
 

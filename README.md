@@ -31,11 +31,12 @@ straight to the kernel and the X server.
 | **[bare](https://github.com/isene/bare)**   | Interactive shell with line editing, history, completion, nicks, multi-pipes, redirects, here-strings, abbreviations, undo, smart hotkeys | ~16k | ~150KB |
 | **[show](https://github.com/isene/show)**   | Pager / file viewer with syntax highlighting, ESC sanitisation, cat/pane/pipe modes | ~3.5k | ~40KB |
 | **[glass](https://github.com/isene/glass)** | Terminal emulator: X11 wire protocol, kitty graphics, color emoji via XRender, pseudo-transparency, configurable fonts/keys | ~12k | ~110KB |
-| **[tile](https://github.com/isene/tile)**   | Tiling window manager: 10 workspaces, per-workspace tabs, row-of-squares bar with per-tab colour cycling, smart workspace cycling, stash | ~3.5k | ~37KB |
+| **[tile](https://github.com/isene/tile)**   | Tiling window manager: 10 workspaces, per-workspace tabs, row-of-squares bar, smart cycling, stash. Bundles **strip** — the X11 status bar that hosts the asmites | ~7k  | ~70KB |
+| **[chasm-bits](https://github.com/isene/chasm-bits)** | "Asmites" fed into `strip`: clock, cpu, mem, disk, battery, brightness, network, mailbox, moonphase, wintitle, … each one a tiny static binary | ~2k  | ~5KB each |
 | **[glyph](https://github.com/isene/glyph)** | TrueType font rasterizer: TTF/OpenType parser, quadratic Bezier flatten, scanline NZW with 4x4 supersample AA, composite glyphs, UTF-8, variable fonts (fvar+gvar+IUP) | ~4.2k | ~37KB |
 
 Stack them all together and you get a complete X session in **under
-400 KB** of executable code, with zero shared libraries to update,
+500 KB** of executable code, with zero shared libraries to update,
 patch, or break.
 
 ## Why?
@@ -68,7 +69,7 @@ Every CHasm tool follows the same conventions:
 ## Build them all
 
 ```bash
-for t in bare show glass tile glyph; do
+for t in bare show glass tile chasm-bits glyph; do
   git clone https://github.com/isene/$t.git
   (cd $t && make)
 done
@@ -79,12 +80,20 @@ on a modern laptop: under 3 seconds for the entire suite.
 
 ## Configuration tools
 
-The CHasm tools are paired with optional Rust TUI configurators that
-make their config files easier to edit interactively:
+The CHasm tools are paired with optional Rust TUI configurators
+([crust](https://github.com/isene/crust)-based) that make their config
+files easier to edit interactively:
 
-- [bareconf](https://github.com/isene/bareconf)
-- [glassconf](https://github.com/isene/glassconf)
-- tileconf — coming after tile stabilises
+| Configurator | Edits | Status |
+|--------------|-------|--------|
+| [bareconf](https://github.com/isene/bareconf)   | `~/.barerc`  | shipped |
+| [glassconf](https://github.com/isene/glassconf) | `~/.glassrc` | shipped |
+| [tileconf](https://github.com/isene/tileconf)   | `~/.tilerc`  | shipped |
+| [stripconf](https://github.com/isene/stripconf) | `~/.striprc` | shipped |
+
+All four use the same `~/.<tool>rc.tmp → .bak → publish` atomic-save
+dance, so a kill mid-write can never blank a config; `mv ~/.<tool>rc.bak
+~/.<tool>rc` always restores the previous good state.
 
 These are the *only* CHasm-adjacent tools written in something other
 than asm; they exist because writing a TUI configurator in pure asm
@@ -92,14 +101,13 @@ would defeat the whole point.
 
 ## Status
 
-All five tools are usable today. tile is approaching "replace i3
-entirely" feature parity. glyph is the newest — a pure-asm TTF
+All six tools are usable today. tile + strip + the chasm-bits asmites
+form the daily-driver desktop. glyph is the newest — a pure-asm TTF
 rasterizer that already renders OpenType variable fonts (interpolating
 between weight masters via gvar deltas + IUP), with the eventual goal
 of replacing glass's X core bitmap fonts so the whole desktop renders
-TTF without dynamic linking. The next major addition is `strip` — an
-X11 status bar with system tray, written in the same pure-asm style —
-which will join the suite when tile lands its multi-monitor phase.
+TTF without dynamic linking. The next milestone is glyph's integration
+into glass; after that, tile's multi-monitor phase.
 
 ## License
 

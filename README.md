@@ -34,6 +34,7 @@ straight to the kernel and the X server.
 | **[tile](https://github.com/isene/tile)**   | Tiling window manager: 10 workspaces, per-workspace tabs, row-of-squares bar, smart cycling, stash. Bundles **strip** — the X11 status bar that hosts the asmites | ~7k  | ~70KB |
 | **[chasm-bits](https://github.com/isene/chasm-bits)** | "Asmites" fed into `strip`: clock, cpu, mem, disk, battery, brightness, network, mailbox, moonphase, wintitle, … each one a tiny static binary | ~2k  | ~5KB each |
 | **[glyph](https://github.com/isene/glyph)** | TrueType font rasterizer: TTF/OpenType parser, quadratic Bezier flatten, scanline NZW with 4x4 supersample AA, composite glyphs, UTF-8, variable fonts (fvar+gvar+IUP) | ~4.2k | ~37KB |
+| **[bolt](https://github.com/isene/bolt)**   | Screen locker: fullscreen override-redirect, keyboard + pointer grab, baked raw-RGB lock-screen image, suid-root C helper for `crypt()`/shadow auth | ~2.5k | ~24KB |
 
 Stack them all together and you get a complete X session in **under
 500 KB** of executable code, with zero shared libraries to update,
@@ -69,7 +70,7 @@ Every CHasm tool follows the same conventions:
 ## Build them all
 
 ```bash
-for t in bare show glass tile chasm-bits glyph; do
+for t in bare show glass tile chasm-bits glyph bolt; do
   git clone https://github.com/isene/$t.git
   (cd $t && make)
 done

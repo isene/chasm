@@ -103,6 +103,108 @@ whole point. They share the same atomic-save pattern so a kill
 mid-write can never blank a config (`mv ~/.<tool>rc.bak
 ~/.<tool>rc` always restores the previous good state).
 
+## Asm code-quality conventions
+
+Found in HN review of glass.asm (rep_lodsb,
+[item 48008299](https://news.ycombinator.com/item?id=48008299)) and
+applied across the suite 2026-05-04. **New code must follow these.**
+
+### 1. No redundant `TEST` after `SUB`
+
+`SUB` already sets ZF/SF correctly. The only branches that need OF
+to be explicitly cleared (i.e. for which a separate `TEST` would
+matter) are signed comparisons (`jl`/`jle`/`jg`/`jge`). Bare
+`jz`/`jnz`/`js`/`jns` after `sub r, x` reads SUB's flags directly.
+
+```asm
+; Bad
+sub  rdx, rcx
+test rdx, rdx       ; ← redundant
+jz   .empty
+
+; Good
+sub  rdx, rcx
+jz   .empty
+```
+
+For `jle` after `sub`: safe iff the operands are small non-negative
+values (no signed-overflow risk). Audit each case; when in doubt,
+keep the explicit `test`.
+
+### 2. Prefer 32-bit registers for 32-bit data
+
+Every `r64` instruction adds a REX.W prefix byte. x86-64 implicitly
+zero-extends 32-bit register writes into the full 64-bit register,
+so `mov eax, [field]` and `xor eax, eax` clear the upper 32 bits as
+a side effect.
+
+```asm
+; Bad — wastes 1 byte each, BSS field is resd 1
+mov rax, [client_count]
+xor rax, rax
+
+; Good
+mov eax, [client_count]
+xor eax, eax
+```
+
+Caveats:
+- Memory writes: `mov [field], eax` writes 4 bytes. If the BSS field
+  is `resq 1`, the upper 4 bytes are NOT zeroed. Either declare the
+  field as `resd 1` (preferred — saves BSS too), or keep `rax`.
+- Pointer values must stay 64-bit.
+- Anything indexing into 64-bit address space must stay 64-bit.
+
+### 3. Fixed-string compares: helper, not inline cmp chains
+
+```asm
+; Bad — opaque, repeated 41× across glass.asm at audit time
+cmp dword [rax], 'XAUT'
+jne .next
+cmp dword [rax+4], 'HORI'
+jne .next
+cmp word  [rax+8], 'TY'
+jne .next
+cmp byte  [rax+10], '='
+jne .next
+
+; Good — single helper call
+mov edi, eax
+lea rsi, [str_xauthority_eq]   ; "XAUTHORITY="
+mov ecx, 11
+call streq_n                   ; ZF=1 iff equal (REPE CMPSB internally)
+jne .next
+```
+
+`streq_n` is a 3-line helper. The cmp-chain is acceptable for a
+single fixed compare; for 3+ chunks it's wasted bytes and the
+helper wins.
+
+### 4. State-machine dispatch: indirect jump, not chained `cmp`/`je`
+
+```asm
+; Bad — 7-link chain in glass.asm vt_process hot path (pre-fix)
+mov rcx, [vt_state]
+cmp rcx, VT_ESC
+je  .vtp_esc
+cmp rcx, VT_CSI
+je  .vtp_csi
+... (5 more)
+
+; Good — table-driven, branch predictor handles it via BTB
+mov ecx, [vt_state]
+cmp ecx, MAX_STATE
+ja  .vtp_default
+lea rdx, [rel .vtp_jmp_tab]
+jmp [rdx + rcx*8]
+.vtp_jmp_tab:
+    dq .vtp_normal
+    dq .vtp_esc
+    ...
+```
+
+Threshold: ≤3 cases → cmp/je is fine. ≥4 cases → use a jump table.
+
 ## When working in a CHasm repo
 
 1. **Read the project's own CLAUDE.md first** — each repo

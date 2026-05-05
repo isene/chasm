@@ -238,7 +238,7 @@ Threshold: ≤3 cases → cmp/je is fine. ≥4 cases → use a jump table.
 
 An experimental AArch64 / Darwin arm64 port lives in `src/` with
 its own `Makefile` and `scripts/test.sh`. It does not change the
-Linux/x86_64 framing of the suite — it is an additive working
+Linux/x86_64 framing of the suite. It is an additive working
 surface for Apple Silicon. Conventions and tool list are in
 `ARM.md`. When the ARM port grows or changes, update `ARM.md`
 (not the umbrella tool list).

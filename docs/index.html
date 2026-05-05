@@ -3,399 +3,93 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>CHasm - x86_64 Assembly Desktop</title>
-  <meta name="description" content="CHasm is a small Linux desktop suite written entirely in x86_64 assembly: shell, terminal emulator, tiling window manager, status bar, file viewer, font rasterizer, screen locker. No libc, no toolkit, no dynamic linking.">
+  <title>CHasm ARM - Apple Silicon Assembly Tools</title>
+  <meta name="description" content="CHasm ARM is a small set of native ARM64 assembly tools for macOS on Apple Silicon.">
   <link rel="icon" href="img/chasm.svg" type="image/svg+xml">
   <link rel="stylesheet" href="style.css">
-  <!-- OpenGraph -->
-  <meta property="og:title" content="CHasm — x86_64 Assembly Desktop">
-  <meta property="og:description" content="A complete X session in under 500 KB of executable code, with zero shared libraries.">
+  <meta property="og:title" content="CHasm ARM">
+  <meta property="og:description" content="Native ARM64 assembly tools for Darwin arm64.">
   <meta property="og:type" content="website">
   <meta property="og:image" content="img/chasm.svg">
 </head>
 <body>
-
   <header class="hero">
     <div class="container">
-      <img src="img/chasm.svg" alt="CHasm logo" class="hero-logo">
-      <h1>CHasm</h1>
+      <img src="img/chasm.svg" alt="CHasm ARM logo" class="hero-logo">
+      <h1>CHasm ARM</h1>
       <p class="tagline">
-        A small Linux desktop suite written entirely in x86_64 assembly.
-        No libc. No toolkit. No dynamic linking. Zero runtime.
+        Native AArch64 assembly tools for this Apple Silicon machine.
+        Small sources, direct Darwin syscalls for file I/O, and local
+        tests that prove the binaries run here.
       </p>
       <div class="badges">
-        <img src="https://img.shields.io/badge/language-x86__64%20asm-2b3a4a" alt="x86_64 asm">
-        <img src="https://img.shields.io/badge/license-Unlicense-green" alt="Unlicense">
-        <img src="https://img.shields.io/badge/platform-Linux-blue" alt="Linux">
-        <img src="https://img.shields.io/badge/runtime-zero-brightgreen" alt="zero runtime">
+        <span class="badge">ARM64 asm</span>
+        <span class="badge">Darwin arm64</span>
+        <span class="badge">Unlicense</span>
       </div>
       <div class="cta">
-        <a href="#tools" class="primary">Browse the tools</a>
-        <a href="https://github.com/isene" class="secondary">GitHub</a>
+        <a href="#tools" class="primary">Tools</a>
+        <a href="#build" class="secondary">Build</a>
       </div>
     </div>
   </header>
 
-  <section id="screenshot">
-    <div class="container">
-      <img src="img/screenshot.png" alt="CHasm desktop screenshot" style="width:100%; max-width:1200px; border-radius:14px; border:1px solid #26263a; display:block; margin:0 auto;">
-      <p class="caption" style="text-align:center; margin-top:1rem; color:var(--fg-mute); font-size:0.9rem;">
-        Every binary on screen is x86_64 assembly. <strong>tile</strong>
-        holds the layout. <strong>strip</strong> drives the status row,
-        fed by the asmites in <strong>chasm-bits</strong>.
-        <strong>glass</strong> renders each pane (pseudo-transparency
-        picks up the wallpaper). <strong>bare</strong> is the shell
-        behind every prompt. <strong>show</strong> renders the
-        syntax-highlighted source.
-      </p>
-    </div>
-  </section>
-
-  <section id="why">
-    <div class="container">
-      <h2>Why assembly?</h2>
-      <p class="section-intro">
-        Modern stacks are deep. A normal terminal loads 30+ shared
-        libraries before drawing a single character. A shell pulls
-        in Python, GLib, OpenSSL transitively. A window manager
-        depends on a toolkit that depends on a compositor that
-        depends on... CHasm strips all of that away to find out
-        what you actually need.
-      </p>
-      <p class="section-intro">
-        The answer turns out to be: very little. The Linux kernel
-        gives you syscalls. X11 is a documented Unix-socket wire
-        protocol. Everything else is a choice. CHasm is the choice
-        to write that everything else, by hand, in the smallest
-        reasonable language.
-      </p>
-      <div class="features">
-        <div class="feature">
-          <h3>No libc, no toolkit</h3>
-          <p>
-            Direct <code>syscall</code> for kernel work, the X11 wire
-            protocol over a Unix socket for graphics. No dynamic
-            linker, no malloc, no glibc, no Xlib, no GTK, no Qt.
-            BSS-allocated buffers and that's it.
-          </p>
-        </div>
-        <div class="feature">
-          <h3>Single static ELF</h3>
-          <p>
-            Each tool is one self-contained binary, typically 20-150
-            KB. The whole desktop fits in under 500 KB of executable
-            code. Nothing to update, nothing to break, no dependency
-            graph to audit.
-          </p>
-        </div>
-        <div class="feature">
-          <h3>Microsecond startup</h3>
-          <p>
-            <strong>bare</strong> comes up in roughly 9 microseconds.
-            No interpreter, no runtime initialisation, no library
-            loading. The kernel hands control straight to your
-            entry point.
-          </p>
-        </div>
-        <div class="feature">
-          <h3>Designed for battery</h3>
-          <p>
-            Polling, waking, and forking on a timer are suspect.
-            Status segments use blocking reads on the right
-            file/socket; X11 work compares target state to last-
-            applied state before issuing requests. CPU goes back
-            to sleep, fast.
-          </p>
+  <main>
+    <section id="tools">
+      <div class="container">
+        <h2>Working Tools</h2>
+        <p class="section-intro">
+          This repo now contains real ARM64 assembly programs instead
+          of only links to the upstream x86_64/Linux CHasm suite.
+        </p>
+        <div class="grid">
+          <article class="card">
+            <h3 class="card-title">arm-echo</h3>
+            <div class="card-kind">argv printer</div>
+            <p class="card-desc">Prints command arguments separated by spaces, then a newline.</p>
+          </article>
+          <article class="card">
+            <h3 class="card-title">arm-cat</h3>
+            <div class="card-kind">file copier</div>
+            <p class="card-desc">Copies stdin or one or more files to stdout with a direct syscall loop.</p>
+          </article>
+          <article class="card">
+            <h3 class="card-title">arm-upper</h3>
+            <div class="card-kind">byte filter</div>
+            <p class="card-desc">Uppercases ASCII bytes from stdin or files and leaves other bytes unchanged.</p>
+          </article>
+          <article class="card">
+            <h3 class="card-title">arm-lines</h3>
+            <div class="card-kind">line counter</div>
+            <p class="card-desc">Counts newline bytes from stdin or files, with totals for multiple files.</p>
+          </article>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <section id="tools">
-    <div class="container">
-      <h2>The tools</h2>
-      <p class="section-intro">
-        Seven asm binaries that together form a complete X session,
-        plus four Rust TUI configurators (the only non-asm parts of
-        the suite — writing a configurator in pure asm would defeat
-        the whole point).
-      </p>
-      <div class="grid">
-
-        <div class="card">
-          <div class="card-head">
-            <img class="card-logo" src="https://raw.githubusercontent.com/isene/bare/master/img/bare.svg" alt="bare logo" onerror="this.style.visibility='hidden'">
-            <div>
-              <h3 class="card-title"><a class="card-link" href="https://github.com/isene/bare">bare</a></h3>
-              <div class="card-kind">Shell (asm binary)</div>
-              <div class="card-ruby">~16k LOC · ~150 KB</div>
-            </div>
-          </div>
-          <p class="card-desc">
-            Interactive shell with line editing, history, completion,
-            nicks, multi-pipes, redirects, here-strings, abbreviations,
-            undo, and smart hotkeys. ~9 µs startup.
-          </p>
-          <div class="card-meta">
-            <span class="repo">isene/bare</span>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-head">
-            <img class="card-logo" src="https://raw.githubusercontent.com/isene/glass/master/img/glass.svg" alt="glass logo" onerror="this.style.visibility='hidden'">
-            <div>
-              <h3 class="card-title"><a class="card-link" href="https://github.com/isene/glass">glass</a></h3>
-              <div class="card-kind">Terminal Emulator (asm binary)</div>
-              <div class="card-ruby">~12k LOC · ~110 KB</div>
-            </div>
-          </div>
-          <p class="card-desc">
-            X11 wire protocol direct, kitty graphics, color emoji via
-            XRender, pseudo-transparency, configurable fonts and keys.
-            No toolkit, no Xlib, just the wire.
-          </p>
-          <div class="card-meta">
-            <span class="repo">isene/glass</span>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-head">
-            <img class="card-logo" src="https://raw.githubusercontent.com/isene/tile/master/img/tile.svg" alt="tile logo" onerror="this.style.visibility='hidden'">
-            <div>
-              <h3 class="card-title"><a class="card-link" href="https://github.com/isene/tile">tile</a></h3>
-              <div class="card-kind">Window Manager + Bar (asm binary)</div>
-              <div class="card-ruby">~7k LOC · ~70 KB</div>
-            </div>
-          </div>
-          <p class="card-desc">
-            Tiling window manager: 10 workspaces, per-workspace tabs,
-            row-of-squares bar, smart cycling, stash. Bundles
-            <strong>strip</strong> — the X11 status bar that hosts
-            the asmites.
-          </p>
-          <div class="card-meta">
-            <span class="repo">isene/tile</span>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-head">
-            <img class="card-logo" src="https://raw.githubusercontent.com/isene/show/master/img/show.svg" alt="show logo" onerror="this.style.visibility='hidden'">
-            <div>
-              <h3 class="card-title"><a class="card-link" href="https://github.com/isene/show">show</a></h3>
-              <div class="card-kind">Pager / Viewer (asm binary)</div>
-              <div class="card-ruby">~3.5k LOC · ~40 KB</div>
-            </div>
-          </div>
-          <p class="card-desc">
-            File viewer with syntax highlighting, ESC sanitisation,
-            cat / pane / pipe modes. Drop-in replacement for
-            <code>less</code> when reading source.
-          </p>
-          <div class="card-meta">
-            <span class="repo">isene/show</span>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-head">
-            <img class="card-logo" src="img/chasm.svg" alt="chasm-bits logo">
-            <div>
-              <h3 class="card-title"><a class="card-link" href="https://github.com/isene/chasm-bits">chasm-bits</a></h3>
-              <div class="card-kind">Asmites (asm binaries)</div>
-              <div class="card-ruby">~2k LOC · ~5 KB each</div>
-            </div>
-          </div>
-          <p class="card-desc">
-            Tiny status-bar segment programs fed into <strong>strip</strong>:
-            clock, cpu, mem, disk, battery, brightness, network,
-            mailbox, moonphase, wintitle, and more. Each one a
-            self-contained binary.
-          </p>
-          <div class="card-meta">
-            <span class="repo">isene/chasm-bits</span>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-head">
-            <img class="card-logo" src="https://raw.githubusercontent.com/isene/glyph/master/img/glyph.svg" alt="glyph logo" onerror="this.style.visibility='hidden'">
-            <div>
-              <h3 class="card-title"><a class="card-link" href="https://github.com/isene/glyph">glyph</a></h3>
-              <div class="card-kind">Font Rasterizer (asm binary)</div>
-              <div class="card-ruby">~4.2k LOC · ~37 KB</div>
-            </div>
-          </div>
-          <p class="card-desc">
-            TrueType / OpenType rasterizer: TTF parser, quadratic
-            Bezier flatten, scanline NZW with 4×4 supersample AA,
-            composite glyphs, UTF-8, variable fonts (fvar + gvar
-            + IUP).
-          </p>
-          <div class="card-meta">
-            <span class="repo">isene/glyph</span>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-head">
-            <img class="card-logo" src="https://raw.githubusercontent.com/isene/bolt/master/img/bolt.svg" alt="bolt logo" onerror="this.style.visibility='hidden'">
-            <div>
-              <h3 class="card-title"><a class="card-link" href="https://github.com/isene/bolt">bolt</a></h3>
-              <div class="card-kind">Screen Locker (asm binary)</div>
-              <div class="card-ruby">~2.5k LOC · ~24 KB</div>
-            </div>
-          </div>
-          <p class="card-desc">
-            Fullscreen override-redirect locker with keyboard +
-            pointer grab and a baked raw-RGB lock-screen image.
-            A small suid-root C helper handles
-            <code>crypt()</code> / shadow auth.
-          </p>
-          <div class="card-meta">
-            <span class="repo">isene/bolt</span>
-          </div>
-        </div>
-
+    <section id="build">
+      <div class="container">
+        <h2>Build</h2>
+        <pre><code>make all
+make test
+make install</code></pre>
+        <p class="section-intro">
+          Binaries are written to <code>bin/</code>. The build target is
+          intentionally Darwin arm64 until another platform is tested.
+        </p>
       </div>
+    </section>
 
-      <div class="grid-divider">
-        <span class="grid-divider-label">Configurators</span>
+    <section id="source">
+      <div class="container">
+        <h2>Source</h2>
+        <p class="section-intro">
+          The assembly lives in <code>src/</code>, shared helpers live in
+          <code>src/common.S</code>, and the local verification script is
+          <code>scripts/test.sh</code>.
+        </p>
       </div>
-
-      <div class="grid">
-
-        <div class="card">
-          <div class="card-head">
-            <img class="card-logo" src="https://raw.githubusercontent.com/isene/bareconf/master/img/bareconf.svg" alt="bareconf logo" onerror="this.style.visibility='hidden'">
-            <div>
-              <h3 class="card-title"><a class="card-link" href="https://github.com/isene/bareconf">bareconf</a></h3>
-              <div class="card-kind lib">Rush Config (Rust TUI)</div>
-              <div class="card-ruby">edits ~/.barerc</div>
-            </div>
-          </div>
-          <p class="card-desc">
-            TUI configuration tool for the bare shell. Browse and
-            modify all settings with live previews. Atomic save:
-            tmp → bak → publish.
-          </p>
-          <div class="card-meta">
-            <span class="repo">isene/bareconf</span>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-head">
-            <img class="card-logo" src="https://raw.githubusercontent.com/isene/glassconf/master/img/glassconf.svg" alt="glassconf logo" onerror="this.style.visibility='hidden'">
-            <div>
-              <h3 class="card-title"><a class="card-link" href="https://github.com/isene/glassconf">glassconf</a></h3>
-              <div class="card-kind lib">Glass Config (Rust TUI)</div>
-              <div class="card-ruby">edits ~/.glassrc</div>
-            </div>
-          </div>
-          <p class="card-desc">
-            Edit glass's bg / fg / cursor as 24-bit hex, step font
-            size through nine presets, adjust opacity and cursor
-            blink, manage the bg-cycle palette. Six built-in themes.
-          </p>
-          <div class="card-meta">
-            <span class="repo">isene/glassconf</span>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-head">
-            <img class="card-logo" src="https://raw.githubusercontent.com/isene/tileconf/master/img/tileconf.svg" alt="tileconf logo" onerror="this.style.visibility='hidden'">
-            <div>
-              <h3 class="card-title"><a class="card-link" href="https://github.com/isene/tileconf">tileconf</a></h3>
-              <div class="card-kind lib">Tile Config (Rust TUI)</div>
-              <div class="card-ruby">edits ~/.tilerc</div>
-            </div>
-          </div>
-          <p class="card-desc">
-            Configure tile's bar height, padding, workspace and tab
-            colors, border widths, layout ratios. Live preview shows
-            what the bar will look like as you tweak.
-          </p>
-          <div class="card-meta">
-            <span class="repo">isene/tileconf</span>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-head">
-            <img class="card-logo" src="https://raw.githubusercontent.com/isene/stripconf/master/img/stripconf.svg" alt="stripconf logo" onerror="this.style.visibility='hidden'">
-            <div>
-              <h3 class="card-title"><a class="card-link" href="https://github.com/isene/stripconf">stripconf</a></h3>
-              <div class="card-kind lib">Strip Config (Rust TUI)</div>
-              <div class="card-ruby">edits ~/.striprc</div>
-            </div>
-          </div>
-          <p class="card-desc">
-            Reorder, toggle, and edit strip's asmite-driven status
-            segments without ever opening the rc file. Live colour
-            swatches, per-segment refresh interval, comment-preserving
-            save.
-          </p>
-          <div class="card-meta">
-            <span class="repo">isene/stripconf</span>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </section>
-
-  <section id="install" class="install">
-    <div class="container">
-      <h2>Build them all</h2>
-      <p class="section-intro">
-        Each tool is one .asm file (or a small set), assembled with
-        NASM and linked with ld. No autotools, no Make targets to
-        memorise, no <code>./configure</code>.
-      </p>
-      <pre><span class="cmd">git clone https://github.com/isene/bare && cd bare</span>
-<span class="cmd">nasm -f elf64 bare.asm -o bare.o &amp;&amp; ld bare.o -o bare</span>
-<span class="cmd">install -m 755 bare ~/bin/</span></pre>
-      <p class="section-intro" style="margin-top:1.5rem;">
-        Same recipe for <strong>glass</strong>, <strong>tile</strong>,
-        <strong>show</strong>, <strong>glyph</strong>,
-        <strong>bolt</strong>. Each repo has a one-line build
-        command at the top of its README. <strong>chasm-bits</strong>
-        ships a <code>Makefile</code> because it builds many small
-        binaries at once.
-      </p>
-    </div>
-  </section>
-
-  <section id="related">
-    <div class="container">
-      <h2>Sister suite</h2>
-      <p class="section-intro">
-        The same author also maintains the
-        <a href="https://github.com/isene/fe2o3" style="color:var(--rust-glow);">Fe<sub>2</sub>O<sub>3</sub></a>
-        Rust terminal suite (
-        <a href="https://isene.org/fe2o3/" style="color:var(--rust-glow);">isene.org/fe2o3/</a>
-        ): file manager, web browser, email / RSS hub, calendar,
-        astronomy, modal editor, and more. Where CHasm asks "how
-        little can I get away with?", Fe2O3 asks "what does the
-        same UX look like with a real type system underneath?"
-      </p>
-    </div>
-  </section>
-
-  <footer>
-    <div class="container">
-      <p>
-        Public domain (Unlicense). Borrow or steal whatever you want.
-      </p>
-      <p>
-        — <a href="https://isene.com">Geir Isene</a>
-      </p>
-    </div>
-  </footer>
-
+    </section>
+  </main>
 </body>
 </html>

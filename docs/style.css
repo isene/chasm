@@ -1,334 +1,198 @@
-/* CHasm site - dark starfield with rust accent (shared visual language with the Fe2O3 sister suite) */
-
 :root {
-  --rust: #f74c00;
-  --rust-dark: #b7410e;
-  --rust-glow: #ff7a3a;
-  --bg: #0a0a14;
-  --bg-elev: #161622;
-  --bg-card: #1a1a2a;
-  --fg: #e6e6ea;
-  --fg-dim: #9aa0b0;
-  --fg-mute: #6a7080;
-  --cyan: #80dfff;
-  --green: #4ade80;
-  --yellow: #ffe9a8;
+  --bg: #101114;
+  --band: #17191e;
+  --panel: #1f2228;
+  --line: #343944;
+  --text: #f0f2f5;
+  --muted: #a9b0bc;
+  --soft: #798292;
+  --rust: #e0562b;
+  --cyan: #58c4dd;
+  --yellow: #f2d27b;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+* {
+  box-sizing: border-box;
+}
 
-html, body {
+html,
+body {
+  margin: 0;
+  min-height: 100%;
   background: var(--bg);
-  color: var(--fg);
+  color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   line-height: 1.55;
-  min-height: 100vh;
-  overflow-x: hidden;
 }
 
-/* Starfield backdrop (CSS-only, no JS) */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  background:
-    radial-gradient(1px 1px at 20% 30%,  rgba(255,255,255,0.6), transparent 50%),
-    radial-gradient(1px 1px at 60% 20%,  rgba(255,255,255,0.4), transparent 50%),
-    radial-gradient(1px 1px at 80% 60%,  rgba(255,255,255,0.7), transparent 50%),
-    radial-gradient(1px 1px at 30% 80%,  rgba(255,255,255,0.5), transparent 50%),
-    radial-gradient(1px 1px at 70% 90%,  rgba(255,255,255,0.6), transparent 50%),
-    radial-gradient(1px 1px at 90% 40%,  rgba(128,223,255,0.5), transparent 50%),
-    radial-gradient(2px 2px at 10% 70%,  rgba(255,233,168,0.5), transparent 50%),
-    radial-gradient(1px 1px at 50% 50%,  rgba(255,255,255,0.4), transparent 50%),
-    radial-gradient(1200px 800px at 80% -10%, rgba(247,76,0,0.12), transparent 60%),
-    radial-gradient(900px 600px at -10% 100%, rgba(128,223,255,0.08), transparent 60%);
-  pointer-events: none;
-  z-index: -1;
+body {
+  border-top: 4px solid var(--rust);
 }
 
 .container {
-  max-width: 1200px;
+  width: min(1120px, calc(100% - 32px));
   margin: 0 auto;
-  padding: 0 1.5rem;
 }
 
-/* Hero */
 .hero {
-  padding: 6rem 0 4rem;
+  padding: 72px 0 56px;
+  background: linear-gradient(180deg, #17191e 0%, #101114 100%);
   text-align: center;
 }
 
 .hero-logo {
-  width: 160px;
-  height: 160px;
-  margin: 0 auto 1.5rem;
   display: block;
-  filter: drop-shadow(0 0 40px rgba(247, 76, 0, 0.45));
+  width: 128px;
+  height: 128px;
+  margin: 0 auto 24px;
 }
 
 .hero h1 {
-  font-size: clamp(2.5rem, 6vw, 4.5rem);
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  background: linear-gradient(135deg, #ffe9a8 0%, var(--rust) 50%, var(--cyan) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  margin-bottom: 0.5rem;
+  margin: 0 0 12px;
+  color: var(--yellow);
+  font-size: clamp(2.4rem, 8vw, 4.4rem);
+  line-height: 1;
+  letter-spacing: 0;
 }
-
-.hero .formula {
-  font-family: "Times New Roman", serif;
-  font-style: italic;
-  font-size: 1.1em;
-}
-.hero .formula sub { font-size: 0.65em; }
 
 .tagline {
-  font-size: clamp(1rem, 2vw, 1.3rem);
-  color: var(--fg-dim);
-  margin-bottom: 2rem;
-  max-width: 640px;
-  margin-left: auto;
-  margin-right: auto;
+  max-width: 720px;
+  margin: 0 auto 24px;
+  color: var(--muted);
+  font-size: 1.15rem;
+}
+
+.badges,
+.cta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
 }
 
 .badges {
-  display: flex;
-  justify-content: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  margin-bottom: 2rem;
+  margin-bottom: 28px;
 }
-.badges img { height: 20px; }
 
-.cta {
+.badge {
   display: inline-flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-  justify-content: center;
+  align-items: center;
+  min-height: 28px;
+  padding: 3px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  background: #121419;
+  font: 0.85rem ui-monospace, "SF Mono", Menlo, monospace;
 }
+
 .cta a {
-  display: inline-block;
-  padding: 0.75rem 1.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 8px 16px;
   border-radius: 8px;
   text-decoration: none;
-  font-weight: 600;
-  transition: transform 0.15s, box-shadow 0.15s;
+  font-weight: 650;
 }
-.cta a:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,0,0,0.4); }
+
 .cta .primary {
-  background: linear-gradient(135deg, var(--rust), var(--rust-dark));
+  background: var(--rust);
   color: white;
 }
+
 .cta .secondary {
-  background: var(--bg-card);
-  color: var(--fg);
-  border: 1px solid #333;
+  border: 1px solid var(--line);
+  color: var(--text);
+  background: var(--panel);
 }
 
-/* Section headers */
 section {
-  padding: 4rem 0;
-}
-section h2 {
-  font-size: 2rem;
-  font-weight: 700;
-  margin-bottom: 0.5rem;
-  color: var(--yellow);
-}
-section .section-intro {
-  color: var(--fg-dim);
-  max-width: 720px;
-  margin-bottom: 2.5rem;
+  padding: 56px 0;
 }
 
-/* Grid of tool cards */
+section:nth-child(even) {
+  background: var(--band);
+}
+
+h2 {
+  margin: 0 0 12px;
+  color: var(--yellow);
+  font-size: 2rem;
+  letter-spacing: 0;
+}
+
+.section-intro {
+  max-width: 760px;
+  margin: 0 0 28px;
+  color: var(--muted);
+}
+
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1.5rem;
-}
-
-/* Visual break between the apps grid and the libraries grid: a thin
-   horizontal rule on each side with a centered label. The rule
-   colours follow the rust accent at low opacity to match the page. */
-.grid-divider {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin: 2.5rem 0 1.25rem;
-  color: var(--fg-mute);
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.18em;
-}
-.grid-divider::before,
-.grid-divider::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: linear-gradient(to right, transparent, rgba(247, 76, 0, 0.35), transparent);
-}
-.grid-divider-label {
-  white-space: nowrap;
-  color: var(--rust-glow, #f74c00);
-  font-weight: 600;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
 }
 
 .card {
-  background: var(--bg-card);
-  border: 1px solid #26263a;
-  border-radius: 14px;
-  padding: 1.5rem;
-  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
-  position: relative;
-  overflow: hidden;
-  text-decoration: none;
-  color: inherit;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-.card:hover {
-  transform: translateY(-4px);
-  border-color: var(--rust);
-  box-shadow: 0 20px 50px rgba(247, 76, 0, 0.2);
-}
-.card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(200px 150px at 0% 0%, rgba(247, 76, 0, 0.08), transparent 70%);
-  pointer-events: none;
+  min-height: 190px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
 }
 
-.card-head {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-.card-logo {
-  width: 64px;
-  height: 64px;
-  flex-shrink: 0;
-  border-radius: 10px;
-  background: #0a0a14;
-}
 .card-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--yellow);
-  margin: 0;
+  margin: 0 0 8px;
+  color: var(--cyan);
+  font: 1.45rem ui-monospace, "SF Mono", Menlo, monospace;
+  letter-spacing: 0;
 }
-/* Stretched-link pattern: the title is the actual link, but its
-   ::after overlays the whole .card so the entire surface clicks
-   through to the repo. Required because <a class="card"> can't
-   contain a nested <a> (e.g. the Ruby-equivalent reference) — the
-   HTML5 parser otherwise yanks every block element after the inner
-   <a> out of the card and into the grid as a sibling. */
-.card-link {
-  color: inherit;
-  text-decoration: none;
-}
-.card-link::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-}
-.card-ruby a {
-  position: relative;
-  z-index: 2;
-}
+
 .card-kind {
-  font-size: 0.8rem;
-  color: var(--fg-mute);
+  margin-bottom: 14px;
+  color: var(--soft);
+  font-size: 0.78rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
-.card-kind.lib { color: var(--cyan); }
-
-.card-ruby {
-  font-size: 0.78rem;
-  color: var(--fg-mute);
-  margin-top: 0.15rem;
-}
-.card-ruby a {
-  color: #e2544a;  /* faint Ruby red */
-  text-decoration: none;
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
-}
-.card-ruby a:hover { text-decoration: underline; }
 
 .card-desc {
-  color: var(--fg);
-  flex-grow: 1;
+  margin: 0;
+  color: var(--muted);
 }
 
-.card-meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid #26263a;
-}
-.card-meta img { height: 20px; }
-.card-meta .repo {
-  color: var(--fg-mute);
-  font-size: 0.85rem;
+code {
+  color: var(--cyan);
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
 }
 
-/* Install section */
-.install pre {
-  background: #05050a;
-  border: 1px solid #26263a;
-  border-radius: 10px;
-  padding: 1.25rem 1.5rem;
+pre {
+  max-width: 520px;
   overflow-x: auto;
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  font-size: 0.92rem;
-  color: #e6e6ea;
-  line-height: 1.6;
+  margin: 0 0 20px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #0d0f13;
 }
-.install pre .comment { color: var(--fg-mute); }
-.install pre .cmd { color: var(--green); }
 
-/* Features / why */
-.features {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 1.25rem;
+pre code {
+  color: var(--text);
 }
-.feature {
-  background: var(--bg-card);
-  border-left: 3px solid var(--rust);
-  border-radius: 6px;
-  padding: 1.25rem;
-}
-.feature h3 {
-  color: var(--rust-glow);
-  font-size: 1.1rem;
-  margin-bottom: 0.4rem;
-}
-.feature p { color: var(--fg-dim); font-size: 0.95rem; }
 
-/* Footer */
-footer {
-  padding: 3rem 0 4rem;
-  text-align: center;
-  color: var(--fg-mute);
-  border-top: 1px solid #1a1a2a;
-  margin-top: 4rem;
-}
-footer a { color: var(--rust-glow); text-decoration: none; }
-footer a:hover { text-decoration: underline; }
+@media (max-width: 640px) {
+  .hero {
+    padding: 48px 0 40px;
+  }
 
-@media (max-width: 600px) {
-  .hero { padding: 4rem 0 2rem; }
-  .card { padding: 1.25rem; }
-  .card-head { flex-direction: column; text-align: center; }
+  .hero-logo {
+    width: 96px;
+    height: 96px;
+  }
+
+  section {
+    padding: 40px 0;
+  }
 }

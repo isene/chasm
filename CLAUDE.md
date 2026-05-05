@@ -205,6 +205,43 @@ jmp [rdx + rcx*8]
 
 Threshold: ≤3 cases → cmp/je is fine. ≥4 cases → use a jump table.
 
+### Postscript: external review ≠ goal-aligned work
+
+The four anti-patterns above came from an HN review by rep_lodsb
+(news.ycombinator.com/item?id=48008299). We applied them across
+the suite in a focused session 2026-05-04. **Honest retrospective
+2026-05-05: most of that work was off-goal.**
+
+- **TEST-removal** saves 3 bytes per site, 0 CPU cycles (the TEST
+  was already free in superscalar dispatch).
+- **xor r64 → r32** saves 1 REX byte per site, 0 CPU cycles
+  (decoder eats both forms in 1 cycle).
+- **streq_n helper** *may be slower* than inline cmp chains for
+  short fixed strings (call/ret + microcoded `repe cmpsb` vs.
+  parallel-decoded inline cmps). We did not actually apply this
+  one; if revisited, measure first.
+- **vt_state jump table** is approximately a wash — the original
+  cmp chain mispredicts once on entry, then the BTB handles both
+  forms identically. The win is i-cache footprint, not cycles.
+
+The session's *actually* goal-aligned wins, by contrast:
+
+1. Strip fork-rate cut 6 → 3.2 forks/sec (interval stretches +
+   `vol-status` collapsing 9-process query to 2). **Measured.**
+2. Synthetic ConfigureNotify disabled in tile (also fixed a real
+   firefox regression). **Removes work per resize.**
+3. MapNotify-rescue reverted (9W → 5-6W idle). **Measured.**
+
+**Rule going forward:** external review feedback is interesting,
+not authoritative. Before applying a "cleaner" change, ask: does
+this move watts or microseconds against goals 1-3? If the answer
+is "it's prettier" or "HN said so", that's not enough. Measure
+first; ship only the changes that move the metric.
+
+The asm-hygiene sweep is kept (it's done, not harmful, and the
+docs above are still useful as conventions for *new* code) — but
+treat them as *style* rules, not *performance* rules.
+
 ## When working in a CHasm repo
 
 1. **Read the project's own CLAUDE.md first** — each repo

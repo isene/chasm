@@ -1,99 +1,128 @@
-# CHasm ARM
+# CHasm — CHange to ASM
 
-Native ARM64 assembly tools for this Apple Silicon machine.
+<img src="img/chasm.svg" align="left" width="170" height="170">
 
-This repo started as the upstream CHasm umbrella page for Linux/x86_64
-desktop tools. This checkout is now the ARM/Darwin working surface: it
-contains buildable AArch64 assembly programs, a Makefile, and tests that
-run on macOS arm64.
+A small suite of Linux tools written entirely in **x86_64 assembly**.
+No libc. No toolkits. No dynamic linking. No runtime. Just NASM source,
+direct syscalls, and the X11 wire protocol.
 
-The original CHasm idea still guides the style: small tools, direct
-syscalls for the hot path, simple source, and no dependency stack. macOS
-programs still link through libSystem for process startup, which is the
-normal Darwin executable ABI; the tools themselves use ARM64 assembly and
-Darwin syscalls for file I/O.
+Each tool is a single static ELF binary. None of them depend on each
+other or on anything else outside the kernel and the X server.
 
-## Tools
+**Landing page:** [isene.org/chasm](https://isene.org/chasm/)
 
-| Tool | Purpose |
-| --- | --- |
-| `arm-echo` | Print arguments separated by spaces, then a newline. |
-| `arm-cat` | Copy stdin or files to stdout. |
-| `arm-upper` | Uppercase ASCII bytes from stdin or files. |
-| `arm-lines` | Count newline bytes from stdin or files. |
+The reason for releasing these tools into the Public Domain is not that you should use them. They are released for inspiration. Your use cases and preferences are different from mine. So instead of installing these and adopt your ways of working to these tools, you should rather: clone the repos, fire up Claude Code, prompt the changes you want and make the tools fit you.
 
-The tools are intentionally small and currently focus on terminal/file
-work that can be verified locally on macOS. They are the seed for a real
-ARM suite rather than another pointer page.
+<br clear="left"/>
 
-## Build
+![CHasm desktop](img/screenshot.png)
 
-```sh
-make all
+Every binary on this screen is x86_64 assembly: **tile** holds the
+layout, **strip** + the **asmites** (the per-segment programs in
+[chasm-bits](https://github.com/isene/chasm-bits)) drive the status
+row, **glass** renders each pane (pseudo-transparency picks up the
+wallpaper), **bare** is the shell behind every prompt, and **show**
+is rendering syntax-highlighted source in both the left and
+bottom-right panes. No libc, no toolkit — the whole desktop talks
+straight to the kernel and the X server.
+
+## The tools
+
+| Tool | Purpose | Lines | Binary |
+|------|---------|-------|--------|
+| **[bare](https://github.com/isene/bare)**   | Interactive shell with line editing, history, completion, nicks, multi-pipes, redirects, here-strings, abbreviations, undo, smart hotkeys | ~16k | ~150KB |
+| **[show](https://github.com/isene/show)**   | Pager / file viewer with syntax highlighting, ESC sanitisation, cat/pane/pipe modes | ~3.5k | ~40KB |
+| **[glass](https://github.com/isene/glass)** | Terminal emulator: X11 wire protocol, kitty graphics, color emoji via XRender, pseudo-transparency, configurable fonts/keys | ~12k | ~110KB |
+| **[tile](https://github.com/isene/tile)**   | Tiling window manager: 10 workspaces, per-workspace tabs, row-of-squares bar, smart cycling, stash. Bundles **strip** — the X11 status bar that hosts the asmites | ~7k  | ~70KB |
+| **[chasm-bits](https://github.com/isene/chasm-bits)** | "Asmites" fed into `strip`: clock, cpu, mem, disk, battery, brightness, network, mailbox, moonphase, wintitle, … each one a tiny static binary | ~2k  | ~5KB each |
+| **[glyph](https://github.com/isene/glyph)** | TrueType font rasterizer: TTF/OpenType parser, quadratic Bezier flatten, scanline NZW with 4x4 supersample AA, composite glyphs, UTF-8, variable fonts (fvar+gvar+IUP) | ~4.2k | ~37KB |
+| **[bolt](https://github.com/isene/bolt)**   | Screen locker: fullscreen override-redirect, keyboard + pointer grab, baked raw-RGB lock-screen image, suid-root C helper for `crypt()`/shadow auth | ~2.5k | ~24KB |
+
+Stack them all together and you get a complete X session in **under
+500 KB** of executable code, with zero shared libraries to update,
+patch, or break.
+
+## Why?
+
+Modern software stacks are deep. A terminal emulator routinely loads
+30+ shared libraries before drawing a single character. A shell pulls
+in Python, GLib, OpenSSL transitively. Window managers depend on a
+toolkit that depends on a compositor that depends on... CHasm strips
+all of that away to find out what you actually *need*.
+
+The answer turns out to be: surprisingly little. The Linux kernel gives
+you syscalls. X11 is just a Unix socket and a documented wire protocol.
+Everything else is a choice. CHasm is the choice to write everything
+yourself, from scratch, in the smallest reasonable language.
+
+## Shared aesthetic
+
+Every CHasm tool follows the same conventions:
+
+- **Pure x86_64 NASM**, no libc, no `int 0x80` (only `syscall`)
+- **Single static ELF**, no dynamic linking, no `.so` dependencies
+- **Build pattern**: `nasm -f elf64 file.asm -o file.o && ld file.o -o file`
+- **All BSS**, no malloc — every buffer is statically allocated
+- **Zero-waste rule**: features that aren't used pay no cost. Optional
+  code paths are gated to be cold at rest.
+- **Plain config files**: `~/.barerc`, `~/.glassrc`, `~/.tilerc` — line-
+  based key=value, no JSON/TOML/YAML parsers needed
+- **Unlicense** — public domain
+
+## Build them all
+
+```bash
+for t in bare show glass tile chasm-bits glyph bolt; do
+  git clone https://github.com/isene/$t.git
+  (cd $t && make)
+done
 ```
 
-This writes binaries to `bin/`:
+Each `make` runs the same two-step build (nasm → ld). Total wall time
+on a modern laptop: under 3 seconds for the entire suite.
 
-```sh
-bin/arm-echo hello arm64
-printf 'aBc\n' | bin/arm-upper
-bin/arm-cat README.md | bin/arm-lines
-```
+## ARM port (experimental)
 
-The Makefile refuses to build on non-Darwin or non-arm64 hosts for now.
+A small Apple Silicon / Darwin arm64 port lives in this branch under
+`src/` with its own `Makefile`: `arm-echo`, `arm-cat`, `arm-upper`,
+`arm-lines`. Same shape (single binary, BSS-only buffers, direct
+syscalls on the hot path), different ISA and ABI. See
+[`ARM.md`](ARM.md) for build, test, and source layout.
 
-## Test
+The upstream suite above remains Linux/x86_64.
 
-```sh
-make test
-```
+## Configuration tools
 
-The `make test` target builds the tools and checks argument handling,
-stdin, file input, uppercase filtering, and line-count output.
+The CHasm tools are paired with optional Rust TUI configurators
+([crust](https://github.com/isene/crust)-based) that make their config
+files easier to edit interactively:
 
-## Install
+| Configurator | Edits | Status |
+|--------------|-------|--------|
+| [bareconf](https://github.com/isene/bareconf)   | `~/.barerc`  | shipped |
+| [glassconf](https://github.com/isene/glassconf) | `~/.glassrc` | shipped |
+| [tileconf](https://github.com/isene/tileconf)   | `~/.tilerc`  | shipped |
+| [stripconf](https://github.com/isene/stripconf) | `~/.striprc` | shipped |
 
-```sh
-make install
-```
+All four use the same `~/.<tool>rc.tmp → .bak → publish` atomic-save
+dance, so a kill mid-write can never blank a config; `mv ~/.<tool>rc.bak
+~/.<tool>rc` always restores the previous good state.
 
-By default this copies the tools to `~/.local/bin`. Override the prefix
-when needed:
+These are the *only* CHasm-adjacent tools written in something other
+than asm; they exist because writing a TUI configurator in pure asm
+would defeat the whole point.
 
-```sh
-make install PREFIX=/opt/chasm-arm
-```
+## Status
 
-Remove installed binaries with:
+All six tools are usable today. tile + strip + the chasm-bits asmites
+form the daily-driver desktop. glyph is the newest — a pure-asm TTF
+rasterizer that already renders OpenType variable fonts (interpolating
+between weight masters via gvar deltas + IUP), with the eventual goal
+of replacing glass's X core bitmap fonts so the whole desktop renders
+TTF without dynamic linking. The next milestone is glyph's integration
+into glass; after that, tile's multi-monitor phase.
 
-```sh
-make uninstall
-```
+## License
 
-## Source Layout
-
-| Path | Contents |
-| --- | --- |
-| `src/common.S` | Shared Darwin syscall helpers and decimal printing. |
-| `src/arm_echo.S` | `arm-echo` entry point. |
-| `src/arm_cat.S` | `arm-cat` file/stdin copy loop. |
-| `src/arm_upper.S` | `arm-upper` filter loop. |
-| `src/arm_lines.S` | `arm-lines` newline counter. |
-| `scripts/test.sh` | Local verification script. |
-| `docs/` | Static landing page matching this ARM repo. |
-
-## Original CHasm
-
-Upstream CHasm is Geir Isene's Linux/x86_64 assembly desktop suite:
-
-- `bare`: shell
-- `glass`: X11 terminal emulator
-- `tile` and `strip`: window manager and status bar
-- `show`: pager
-- `glyph`: font rasterizer
-- `bolt`: screen locker
-- `chasm-bits`: status-bar segment tools
-
-Those projects remain Linux/x86_64 and live under
-<https://github.com/isene>. This repo is the Apple Silicon ARM branch of
-the idea.
+[Unlicense](https://unlicense.org/) — public domain. Take it, fork it,
+strip it for parts.

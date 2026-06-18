@@ -37,7 +37,7 @@ straight to the kernel and the X server.
 | **[chasm-bits](https://github.com/isene/chasm-bits)** | "Asmites" fed into `strip`: clock, cpu, mem, disk, battery, brightness, network, mailbox, moonphase, wintitle, … each one a tiny static binary | ~2k  | ~5KB each |
 | **[glyph](https://github.com/isene/glyph)** | TrueType font rasterizer: TTF/OpenType parser, quadratic Bezier flatten, scanline NZW with 4x4 supersample AA, composite glyphs, UTF-8, variable fonts (fvar+gvar+IUP) | ~4.2k | ~37KB |
 | **[bolt](https://github.com/isene/bolt)**   | Screen locker: fullscreen override-redirect, keyboard + pointer grab, baked raw-RGB lock-screen image, suid-root C helper for `crypt()`/shadow auth | ~2.5k | ~24KB |
-| **[spot](https://github.com/isene/spot)**   | Presenter spotlight overlay: darkens the screen, cuts a square hole at the cursor via SHAPE bounding rects. Click-through, screen-share-safe, exits on Esc | ~0.7k | ~14KB |
+| **[spot](https://github.com/isene/spot)**   | Presenter tools, three modes from one binary: **spotlight** (dimmed snapshot, circular hole tracks the cursor), **draw** (click-drag annotation, colour + width configurable), **highlight** (drag-rect that stays bright on a dim surround). Screen-share-safe, every key passes through, toggle from the launch keybinding | ~1.4k | ~22KB |
 
 Stack them all together and you get a complete X session in **under
 500 KB** of executable code, with zero shared libraries to update,

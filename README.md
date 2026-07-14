@@ -45,6 +45,8 @@ patch, or break.
 
 ## The keys
 
+![CHasm keyboard reference](img/chasm-kb.svg)
+
 The suite shares one keyboard scheme: plain **Mod4** is the desktop
 (workspaces, tabs, spot, frame's toggles), **Mod4+Shift** acts on a
 window or restarts a component, and **Alt** belongs to glass (unbound

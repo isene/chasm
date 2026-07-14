@@ -1,0 +1,298 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 375" width="1500" height="375" font-family="monospace, Courier New, Courier">
+  <defs>
+    <style>
+      .key { fill: #333; stroke: #555; stroke-width: 1; rx: 5; ry: 5; }
+      .kw { fill: #2a2a2a; stroke: #555; stroke-width: 1; rx: 5; ry: 5; }
+      .kl { font-size: 12px; fill: #bbb; font-weight: bold; text-anchor: middle; }
+      .m4 { font-size: 8.5px; fill: #FF8888; text-anchor: middle; }
+      .ms { font-size: 8.5px; fill: #88BBFF; text-anchor: middle; }
+      .al { font-size: 8.5px; fill: #DDAAFF; text-anchor: middle; }
+      .sv { font-size: 8.5px; fill: #88FF88; text-anchor: middle; }
+      .nv { font-size: 10px; fill: #bbb; text-anchor: middle; }
+      .lg { font-size: 12px; fill: #ccc; }
+      .lh { font-size: 13px; fill: #fff; font-weight: bold; }
+    </style>
+  </defs>
+  <rect width="1500" height="375" fill="#1a1a1a" rx="8"/>
+  <text x="500" y="24" text-anchor="middle" font-size="15" font-weight="bold" fill="#fff">CHasm Keyboard Reference</text>
+
+  <!-- Row 1: Esc + numbers -->
+  <rect x="10" y="40" width="58" height="55" class="key"/>
+  <text x="39" y="58" class="kl">Esc</text>
+  <text x="39" y="76" class="m4">lock</text>
+
+  <rect x="72" y="40" width="62" height="55" class="key"/>
+  <text x="103" y="58" class="kl">1</text>
+  <text x="103" y="76" class="m4">WS 1</text>
+  <text x="103" y="87" class="ms">move&#8594;1</text>
+
+  <rect x="138" y="40" width="62" height="55" class="key"/>
+  <text x="169" y="58" class="kl">2</text>
+  <text x="169" y="76" class="m4">WS 2</text>
+  <text x="169" y="87" class="ms">move&#8594;2</text>
+
+  <rect x="204" y="40" width="62" height="55" class="key"/>
+  <text x="235" y="58" class="kl">3</text>
+  <text x="235" y="76" class="m4">WS 3</text>
+  <text x="235" y="87" class="ms">move&#8594;3</text>
+
+  <rect x="270" y="40" width="62" height="55" class="key"/>
+  <text x="301" y="58" class="kl">4</text>
+  <text x="301" y="76" class="m4">WS 4</text>
+  <text x="301" y="87" class="ms">move&#8594;4</text>
+
+  <rect x="336" y="40" width="62" height="55" class="key"/>
+  <text x="367" y="58" class="kl">5</text>
+  <text x="367" y="76" class="m4">WS 5</text>
+  <text x="367" y="87" class="ms">move&#8594;5</text>
+
+  <rect x="402" y="40" width="62" height="55" class="key"/>
+  <text x="433" y="58" class="kl">6</text>
+  <text x="433" y="76" class="m4">WS 6</text>
+  <text x="433" y="87" class="ms">move&#8594;6</text>
+
+  <rect x="468" y="40" width="62" height="55" class="key"/>
+  <text x="499" y="58" class="kl">7</text>
+  <text x="499" y="76" class="m4">WS 7</text>
+  <text x="499" y="87" class="ms">move&#8594;7</text>
+
+  <rect x="534" y="40" width="62" height="55" class="key"/>
+  <text x="565" y="58" class="kl">8</text>
+  <text x="565" y="76" class="m4">WS 8</text>
+  <text x="565" y="87" class="ms">move&#8594;8</text>
+
+  <rect x="600" y="40" width="62" height="55" class="key"/>
+  <text x="631" y="58" class="kl">9</text>
+  <text x="631" y="76" class="m4">WS 9</text>
+  <text x="631" y="87" class="ms">move&#8594;9</text>
+
+  <rect x="666" y="40" width="62" height="55" class="key"/>
+  <text x="697" y="58" class="kl">0</text>
+  <text x="697" y="76" class="m4">WS 10</text>
+  <text x="697" y="87" class="ms">move&#8594;10</text>
+
+  <rect x="732" y="40" width="62" height="55" class="key"/>
+  <text x="763" y="58" class="kl">- _</text>
+  <text x="763" y="76" class="al">font &#8722;</text>
+  <text x="763" y="87" class="al">_ reset</text>
+
+  <rect x="798" y="40" width="62" height="55" class="key"/>
+  <text x="829" y="58" class="kl">= +</text>
+  <text x="829" y="80" class="al">font +</text>
+
+  <rect x="864" y="40" width="76" height="55" class="kw"/>
+  <text x="902" y="63" class="nv">Bksp</text>
+  <text x="902" y="81" class="sv">zap session</text>
+
+  <!-- Row 2: QWERTY -->
+  <rect x="10" y="103" width="76" height="55" class="kw"/>
+  <text x="48" y="126" class="nv">Tab</text>
+  <text x="48" y="144" class="m4">layout</text>
+
+  <rect x="90" y="103" width="62" height="55" class="key"/>
+  <text x="121" y="121" class="kl">Q</text>
+  <text x="121" y="141" class="m4">kill win</text>
+
+  <rect x="156" y="103" width="62" height="55" class="key"/>
+  <text x="187" y="125" class="kl">W</text>
+
+  <rect x="222" y="103" width="62" height="55" class="key"/>
+  <text x="253" y="121" class="kl">E</text>
+  <text x="253" y="141" class="m4">expos&#233;</text>
+
+  <rect x="288" y="103" width="62" height="55" class="key"/>
+  <text x="319" y="121" class="kl">R</text>
+  <text x="319" y="137" class="m4">split &#8594;</text>
+  <text x="319" y="150" class="ms">reload</text>
+
+  <rect x="354" y="103" width="62" height="55" class="key"/>
+  <text x="385" y="121" class="kl">T</text>
+  <text x="385" y="137" class="m4">spot ocr</text>
+  <text x="385" y="150" class="al">opacity</text>
+
+  <rect x="420" y="103" width="62" height="55" class="key"/>
+  <text x="451" y="125" class="kl">Y</text>
+
+  <rect x="486" y="103" width="62" height="55" class="key"/>
+  <text x="517" y="121" class="kl">U</text>
+  <text x="517" y="141" class="m4">split &#8593;</text>
+
+  <rect x="552" y="103" width="62" height="55" class="key"/>
+  <text x="583" y="121" class="kl">I</text>
+  <text x="583" y="141" class="m4">stash</text>
+
+  <rect x="618" y="103" width="62" height="55" class="key"/>
+  <text x="649" y="121" class="kl">O</text>
+  <text x="649" y="141" class="m4">unstash</text>
+
+  <rect x="684" y="103" width="62" height="55" class="key"/>
+  <text x="715" y="121" class="kl">P</text>
+  <text x="715" y="141" class="m4">spot pen</text>
+
+  <rect x="750" y="103" width="62" height="55" class="key"/>
+  <text x="781" y="125" class="kl">[ {</text>
+
+  <rect x="816" y="103" width="62" height="55" class="key"/>
+  <text x="847" y="125" class="kl">] }</text>
+
+  <rect x="882" y="103" width="76" height="55" class="kw"/>
+  <text x="920" y="125" class="nv">\ |</text>
+
+  <!-- Row 3: home row -->
+  <rect x="10" y="166" width="86" height="55" class="kw"/>
+  <text x="53" y="196" class="nv">Caps</text>
+
+  <rect x="100" y="166" width="62" height="55" class="key"/>
+  <text x="131" y="188" class="kl">A</text>
+
+  <rect x="166" y="166" width="62" height="55" class="key"/>
+  <text x="197" y="184" class="kl">S</text>
+  <text x="197" y="204" class="m4">spotlight</text>
+
+  <rect x="232" y="166" width="62" height="55" class="key"/>
+  <text x="263" y="184" class="kl">D</text>
+  <text x="263" y="204" class="m4">split &#8595;</text>
+
+  <rect x="298" y="166" width="62" height="55" class="key"/>
+  <text x="329" y="188" class="kl">F</text>
+
+  <rect x="364" y="166" width="62" height="55" class="key"/>
+  <text x="395" y="184" class="kl">G</text>
+  <text x="395" y="204" class="ms">gather</text>
+
+  <rect x="430" y="166" width="62" height="55" class="key"/>
+  <text x="461" y="184" class="kl">H</text>
+  <text x="461" y="204" class="m4">highlight</text>
+
+  <rect x="496" y="166" width="62" height="55" class="key"/>
+  <text x="527" y="188" class="kl">J</text>
+
+  <rect x="562" y="166" width="62" height="55" class="key"/>
+  <text x="593" y="188" class="kl">K</text>
+
+  <rect x="628" y="166" width="62" height="55" class="key"/>
+  <text x="659" y="184" class="kl">L</text>
+  <text x="659" y="204" class="m4">split &#8592;</text>
+
+  <rect x="694" y="166" width="62" height="55" class="key"/>
+  <text x="725" y="188" class="kl">; :</text>
+
+  <rect x="760" y="166" width="62" height="55" class="key"/>
+  <text x="791" y="188" class="kl">' "</text>
+
+  <rect x="826" y="166" width="110" height="55" class="kw"/>
+  <text x="881" y="184" class="nv">Return</text>
+  <text x="881" y="200" class="m4">new glass</text>
+  <text x="881" y="212" class="ms">glass @cwd</text>
+
+  <!-- Row 4: bottom letters -->
+  <rect x="10" y="229" width="110" height="55" class="kw"/>
+  <text x="65" y="259" class="nv">Shift</text>
+
+  <rect x="124" y="229" width="62" height="55" class="key"/>
+  <text x="155" y="247" class="kl">Z</text>
+  <text x="155" y="263" class="m4">lens</text>
+  <text x="155" y="276" class="ms">restart strip</text>
+
+  <rect x="190" y="229" width="62" height="55" class="key"/>
+  <text x="221" y="247" class="kl">X</text>
+  <text x="221" y="267" class="ms">restart tile</text>
+
+  <rect x="256" y="229" width="62" height="55" class="key"/>
+  <text x="287" y="251" class="kl">C</text>
+
+  <rect x="322" y="229" width="62" height="55" class="key"/>
+  <text x="353" y="247" class="kl">V</text>
+  <text x="353" y="267" class="al">paste</text>
+
+  <rect x="388" y="229" width="62" height="55" class="key"/>
+  <text x="419" y="247" class="kl">B</text>
+  <text x="419" y="263" class="m4">sunlight</text>
+  <text x="419" y="276" class="al">bg cycle</text>
+
+  <rect x="454" y="229" width="62" height="55" class="key"/>
+  <text x="485" y="247" class="kl">N</text>
+  <text x="485" y="267" class="m4">nightlight</text>
+
+  <rect x="520" y="229" width="62" height="55" class="key"/>
+  <text x="551" y="251" class="kl">M</text>
+
+  <rect x="586" y="229" width="62" height="55" class="key"/>
+  <text x="617" y="247" class="kl">, &#60;</text>
+  <text x="617" y="267" class="m4">tab &#8592;</text>
+
+  <rect x="652" y="229" width="62" height="55" class="key"/>
+  <text x="683" y="247" class="kl">. &#62;</text>
+  <text x="683" y="267" class="m4">tab &#8594;</text>
+
+  <rect x="718" y="229" width="62" height="55" class="key"/>
+  <text x="749" y="251" class="kl">/ ?</text>
+
+  <rect x="784" y="229" width="110" height="55" class="kw"/>
+  <text x="839" y="259" class="nv">Shift</text>
+
+  <!-- Up arrow -->
+  <rect x="904" y="229" width="62" height="55" class="key"/>
+  <text x="935" y="247" class="kl">&#8593;</text>
+  <text x="935" y="263" class="m4">tab next</text>
+  <text x="935" y="276" class="ms">focus &#8593;</text>
+
+  <!-- Row 5: modifiers + space + arrows -->
+  <rect x="10" y="292" width="76" height="55" class="kw"/>
+  <text x="48" y="322" class="nv">Ctrl</text>
+
+  <rect x="90" y="292" width="76" height="55" class="kw"/>
+  <text x="128" y="316" class="nv">Super</text>
+  <text x="128" y="334" class="m4">= Mod4</text>
+
+  <rect x="170" y="292" width="76" height="55" class="kw"/>
+  <text x="208" y="316" class="nv">Alt</text>
+  <text x="208" y="334" class="al">= glass</text>
+
+  <rect x="250" y="292" width="400" height="55" class="kw"/>
+  <text x="450" y="322" class="nv">Space</text>
+
+  <rect x="654" y="292" width="76" height="55" class="kw"/>
+  <text x="692" y="322" class="nv">Alt</text>
+
+  <rect x="734" y="292" width="76" height="55" class="kw"/>
+  <text x="772" y="322" class="nv">Ctrl</text>
+
+  <rect x="838" y="292" width="62" height="55" class="key"/>
+  <text x="869" y="310" class="kl">&#8592;</text>
+  <text x="869" y="326" class="m4">WS prev</text>
+  <text x="869" y="339" class="ms">focus &#8592;</text>
+
+  <rect x="904" y="292" width="62" height="55" class="key"/>
+  <text x="935" y="310" class="kl">&#8595;</text>
+  <text x="935" y="326" class="m4">tab prev</text>
+  <text x="935" y="339" class="ms">focus &#8595;</text>
+
+  <rect x="970" y="292" width="62" height="55" class="key"/>
+  <text x="1001" y="310" class="kl">&#8594;</text>
+  <text x="1001" y="326" class="m4">WS next</text>
+  <text x="1001" y="339" class="ms">focus &#8594;</text>
+
+  <!-- Legend -->
+  <text x="1070" y="58" class="lh">The realms</text>
+
+  <rect x="1070" y="72" width="14" height="14" fill="#FF8888" rx="2"/>
+  <text x="1092" y="83" class="lg">Mod4 &#8212; the desktop (tile &#183; spot &#183; frame)</text>
+
+  <rect x="1070" y="96" width="14" height="14" fill="#88BBFF" rx="2"/>
+  <text x="1092" y="107" class="lg">Mod4+Shift &#8212; act on window / restart</text>
+
+  <rect x="1070" y="120" width="14" height="14" fill="#DDAAFF" rx="2"/>
+  <text x="1092" y="131" class="lg">Alt &#8212; glass (unbound keys pass as Meta)</text>
+
+  <rect x="1070" y="144" width="14" height="14" fill="#88FF88" rx="2"/>
+  <text x="1092" y="155" class="lg">Ctrl+Alt &#8212; server (frame)</text>
+
+  <text x="1070" y="192" class="lg">Ctrl+Alt+F1..F12&#160;&#160;switch VT</text>
+  <text x="1070" y="212" class="lg">blank_key (framerc)&#160;&#160;panel off now</text>
+  <text x="1070" y="232" class="lg">Expos&#233; is modal: j/k/&#8593;/&#8595; move,</text>
+  <text x="1070" y="248" class="lg">Enter jumps, Esc closes</text>
+
+  <text x="1070" y="288" class="lg" fill="#888">Run `chasm-keys` in a glass for the</text>
+  <text x="1070" y="304" class="lg" fill="#888">live table incl. your own exec binds</text>
+</svg>

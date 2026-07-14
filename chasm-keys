@@ -13,7 +13,13 @@
 #
 # Bash builtins only (CHasm rule: no awk/sed/interpreter spawns).
 
-B=$'\e[1m'; D=$'\e[2m'; R=$'\e[0m'
+# Style only when stdout is a terminal — piped output (show, less,
+# grep) gets plain text instead of raw escape codes.
+if [[ -t 1 ]]; then
+    B=$'\e[1m'; D=$'\e[2m'; R=$'\e[0m'
+else
+    B=""; D=""; R=""
+fi
 
 row() { printf '  %-24s %s\n' "$1" "$2"; }
 hdr() { printf '\n%s%s%s\n' "$B" "$1" "$R"; }

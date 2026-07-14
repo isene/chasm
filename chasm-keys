@@ -1,0 +1,95 @@
+#!/bin/bash
+# chasm-keys — print every key combo the CHasm suite owns.
+#
+# The tile/spot section is parsed LIVE from ~/.tilerc (bind lines,
+# grouped by the file's own `# === section ===` headers), so it never
+# drifts from what is actually bound. The frame and glass sections are
+# the suite's fixed realms, with ~/.framerc / ~/.glassrc overrides
+# honoured where they exist.
+#
+# Realms:  Mod4        = the desktop (tile, frame, spot) — safe keys
+#          Mod4+Shift  = acts on a window / restarts something
+#          Alt         = glass (everything unbound passes through as Meta)
+#
+# Bash builtins only (CHasm rule: no awk/sed/interpreter spawns).
+
+B=$'\e[1m'; D=$'\e[2m'; R=$'\e[0m'
+
+row() { printf '  %-24s %s\n' "$1" "$2"; }
+hdr() { printf '\n%s%s%s\n' "$B" "$1" "$R"; }
+
+# ── tile + spot + utility rows: live from ~/.tilerc ─────────────────────
+hdr "TILE + SPOT + UTILITY ROWS   ${D}(live from ~/.tilerc)${R}"
+pend=""
+while IFS= read -r line; do
+    case $line in
+        '# === '*)
+            s=${line#'# === '}
+            pend=${s%% ===*}
+            ;;
+        bind\ *)
+            rest=${line#bind }
+            combo=${rest%%[[:space:]]*}
+            act=${rest#"$combo"}
+            act=${act#"${act%%[![:space:]]*}"}
+            [[ $act == *' #'* ]] && { act=${act%%' #'*}; act=${act%"${act##*[![:space:]]}"}; }
+            if [[ -n $pend ]]; then
+                printf '\n  %s%s%s\n' "$D" "$pend" "$R"
+                pend=""
+            fi
+            row "$combo" "$act"
+            ;;
+    esac
+done < "$HOME/.tilerc"
+
+# ── frame: server-level keys ────────────────────────────────────────────
+hdr "FRAME   ${D}(server-level, swallowed before clients)${R}"
+blank="Mod4+Escape"
+while IFS= read -r line; do
+    case $line in
+        blank_key*)
+            v=${line#*=}
+            v=${v#"${v%%[![:space:]]*}"}
+            [[ $v == *' #'* ]] && v=${v%%' #'*}
+            v=${v%"${v##*[![:space:]]}"}
+            blank=$v
+            ;;
+    esac
+done < "$HOME/.framerc" 2>/dev/null
+row "Mod4+n"             "night-light toggle (warm)"
+row "Mod4+b"             "sunlight toggle (contrast)"
+row "Mod4+z"             "magnifier lens toggle"
+row "$blank"             "blank the panel now (blank_key)"
+row "Ctrl+Alt+Backspace" "zap: end the whole session"
+row "Ctrl+Alt+F1..F12"   "switch virtual terminal"
+
+# ── glass: the Alt realm ────────────────────────────────────────────────
+hdr "GLASS   ${D}(Alt realm; unbound Alt+keys pass through as Meta)${R}"
+declare -A g=(
+    [font_inc]=alt+plus [font_dec]=alt+minus [font_reset]=alt+underscore
+    [bg_cycle]=alt+b [opacity]=alt+t [paste]=alt+v
+)
+if [[ -r $HOME/.glassrc ]]; then
+    while IFS= read -r line; do
+        case $line in
+            key.*)
+                kv=${line#key.}
+                name=${kv%%[[:space:]=]*}
+                v=${kv#*=}
+                v=${v#"${v%%[![:space:]]*}"}
+                v=${v%"${v##*[![:space:]]}"}
+                [[ -n ${g[$name]+x} ]] && g[$name]=$v
+                ;;
+        esac
+    done < "$HOME/.glassrc"
+fi
+row "${g[font_inc]}"    "font size up"
+row "${g[font_dec]}"    "font size down"
+row "${g[font_reset]}"  "font size reset"
+row "${g[bg_cycle]}"    "background colour cycle"
+row "${g[opacity]}"     "opacity cycle"
+row "${g[paste]}"       "paste PRIMARY (same as Shift+Insert)"
+row "Ctrl+Shift+V"      "paste CLIPBOARD"
+row "Shift+Insert"      "paste PRIMARY"
+row "Shift+PgUp/PgDn"   "scrollback"
+printf '\n'

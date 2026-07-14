@@ -264,8 +264,16 @@ treat them as *style* rules, not *performance* rules.
 - The umbrella `README.md` is the public-facing landing page.
 - The `img/` dir holds `chasm.svg` (logo) and `screenshot.png`
   (referenced by README).
-- There is no source code here. Don't add any — that work belongs
-  in one of the project repos.
+- The only code here is `chasm-keys` — a bash (builtins-only) script
+  that prints the suite's live key table (parses ~/.tilerc, ~/.framerc,
+  ~/.glassrc). It's suite-wide by nature, so the umbrella is its home.
+  All other code belongs in one of the project repos.
+- The suite key scheme (2026-07-14 harmonization): plain Mod4 = the
+  desktop (safe, frequent — tile ops, spot modes, frame's n/b/z
+  toggles), Mod4+Shift = acts on a window or restarts something,
+  Alt = glass's realm (six rebindable actions, everything else passes
+  through as Meta), Mod4+Alt = retired. Dangerous keys never sit on
+  plain Mod4; tile's exit bind was removed outright (zap covers it).
 - When the suite grows (new asm project, new conf companion), update
   README's "tools" / "configurators" tables AND add/remove the
   pointer in this file.

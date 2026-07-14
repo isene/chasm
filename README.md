@@ -43,6 +43,20 @@ Stack them all together and you get a complete X session in **under
 500 KB** of executable code, with zero shared libraries to update,
 patch, or break.
 
+## The keys
+
+The suite shares one keyboard scheme: plain **Mod4** is the desktop
+(workspaces, tabs, spot, frame's toggles), **Mod4+Shift** acts on a
+window or restarts a component, and **Alt** belongs to glass (unbound
+Alt+keys pass through to terminal apps as Meta). This repo ships
+[`chasm-keys`](chasm-keys), a small script that prints the complete
+live key table — the tile section is parsed straight from `~/.tilerc`,
+so it never drifts from what is actually bound. Run it in a glass:
+
+```bash
+chasm-keys
+```
+
 ## Why?
 
 Modern software stacks are deep. A terminal emulator routinely loads

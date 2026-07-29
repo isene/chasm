@@ -1,0 +1,11 @@
+#!/bin/bash
+# chasm-kb — toggle the CHasm keyboard reference (img/chasm-kb.png) in feh.
+#
+# A separate script, not an inline tilerc one-liner: a `pkill -f X || feh Y`
+# toggle in one command line always kills its own shell, because the feh
+# half of the line matches the pkill pattern. Here the pattern only ever
+# exists in this file, never in a process's argv, so pkill can only hit
+# the feh viewer itself (tagged via --class).
+pkill -f "feh --class chasm-kb-viewer" && exit 0
+dir=$(dirname "$(readlink -f "$0")")
+exec feh --class chasm-kb-viewer --scale-down "$dir/img/chasm-kb.png"

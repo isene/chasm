@@ -266,7 +266,11 @@ treat them as *style* rules, not *performance* rules.
   (referenced by README).
 - The only code here is `chasm-keys` — a bash (builtins-only) script
   that prints the suite's live key table (parses ~/.tilerc, ~/.framerc,
-  ~/.glassrc). It's suite-wide by nature, so the umbrella is its home.
+  ~/.glassrc) — and `chasm-kb`, which toggles `img/chasm-kb.png` (the
+  keyboard reference) in feh. Both are suite-wide by nature, so the
+  umbrella is their home. A pkill-or-launch toggle must live in a
+  script, never inline in a tilerc bind: the launch half of the line
+  matches the pkill pattern and the shell kills itself.
   All other code belongs in one of the project repos.
 - The suite key scheme (2026-07-14 harmonization): plain Mod4 = the
   desktop (safe, frequent — tile ops, spot modes, frame's n/b/z

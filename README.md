@@ -4,10 +4,12 @@
 
 A small suite of Linux tools written entirely in **x86_64 assembly**.
 No libc. No toolkits. No dynamic linking. No runtime. Just NASM source,
-direct syscalls, and the X11 wire protocol.
+direct syscalls, the X11 wire protocol, and — since **frame** — DRM/KMS
+and evdev straight to the hardware.
 
 Each tool is a single static ELF binary. None of them depend on each
-other or on anything else outside the kernel and the X server.
+other or on anything else outside the kernel. The X server they talk to
+is in here too.
 
 **Landing page:** [isene.org/chasm](https://isene.org/chasm/)
 
@@ -24,24 +26,26 @@ row, **glass** renders each pane (pseudo-transparency picks up the
 wallpaper), **bare** is the shell behind every prompt, and **show**
 is rendering syntax-highlighted source in both the left and
 bottom-right panes. No libc, no toolkit — the whole desktop talks
-straight to the kernel and the X server.
+straight to the kernel and the X server. These days that server is
+**frame**, so the assembly now reaches all the way down to DRM/KMS.
 
 ## The tools
 
 | Tool | Purpose | Lines | Binary |
 |------|---------|-------|--------|
-| **[bare](https://github.com/isene/bare)**   | Interactive shell with line editing, history, completion, nicks, multi-pipes, redirects, here-strings, abbreviations, undo, smart hotkeys | ~16k | ~150KB |
-| **[show](https://github.com/isene/show)**   | Pager / file viewer with syntax highlighting, ESC sanitisation, cat/pane/pipe modes | ~3.5k | ~40KB |
-| **[glass](https://github.com/isene/glass)** | Terminal emulator: X11 wire protocol, kitty graphics, color emoji via XRender, pseudo-transparency, configurable fonts/keys | ~12k | ~110KB |
-| **[tile](https://github.com/isene/tile)**   | Tiling window manager: 10 workspaces, per-workspace tabs, row-of-squares bar, smart cycling, stash. Bundles **strip** — the X11 status bar that hosts the asmites | ~7k  | ~70KB |
+| **[bare](https://github.com/isene/bare)**   | Interactive shell with line editing, history, completion, nicks, multi-pipes, redirects, here-strings, abbreviations, undo, smart hotkeys | ~20k | 175KB |
+| **[show](https://github.com/isene/show)**   | Pager / file viewer with syntax highlighting, ESC sanitisation, cat/pane/pipe modes | ~3.9k | 45KB |
+| **[glass](https://github.com/isene/glass)** | Terminal emulator: X11 wire protocol, kitty graphics, color emoji via XRender, pseudo-transparency, configurable fonts/keys | ~21k | 199KB |
+| **[tile](https://github.com/isene/tile)**   | Tiling window manager: 10 workspaces, per-workspace tabs, row-of-squares bar, smart cycling, stash. Bundles **strip** — the X11 status bar that hosts the asmites (a further ~5.9k lines, 81KB) | ~14k | 133KB |
+| **[frame](https://github.com/isene/frame)** | X11 display server: serves the wire protocol straight onto DRM/KMS and evdev — window tree, damage-driven compositor, RENDER, SHAPE, XKB, RandR, MIT-SHM, XInput2, XFIXES. Runs the whole CHasm desktop plus Firefox, GIMP and Discord, with no Xorg, no libdrm and no Mesa anywhere in the path | ~25k | 192KB |
 | **[chasm-bits](https://github.com/isene/chasm-bits)** | "Asmites" fed into `strip`: clock, cpu, mem, disk, battery, brightness, network, mailbox, moonphase, wintitle, … each one a tiny static binary | ~2k  | ~5KB each |
-| **[glyph](https://github.com/isene/glyph)** | TrueType font rasterizer: TTF/OpenType parser, quadratic Bezier flatten, scanline NZW with 4x4 supersample AA, composite glyphs, UTF-8, variable fonts (fvar+gvar+IUP) | ~4.2k | ~37KB |
-| **[bolt](https://github.com/isene/bolt)**   | Screen locker: fullscreen override-redirect, keyboard + pointer grab, baked raw-RGB lock-screen image, suid-root C helper for `crypt()`/shadow auth | ~2.5k | ~24KB |
-| **[spot](https://github.com/isene/spot)**   | Presenter tools, four modes from one binary: **spotlight** (dimmed snapshot, circular hole tracks the cursor), **draw** (click-drag annotation, colour + width configurable), **highlight** (drag-rect that stays bright on a dim surround), **ocr** (drag-rect text grab to clipboard, works on unselectable GUI text) | ~2.4k | ~24KB |
+| **[glyph](https://github.com/isene/glyph)** | TrueType font rasterizer: TTF/OpenType parser, quadratic Bezier flatten, scanline NZW with 4x4 supersample AA, composite glyphs, UTF-8, variable fonts (fvar+gvar+IUP) | ~5.7k | 47KB |
+| **[bolt](https://github.com/isene/bolt)**   | Screen locker: fullscreen override-redirect, keyboard + pointer grab, baked raw-RGB lock-screen image, suid-root C helper for `crypt()`/shadow auth | ~3.2k | 29KB |
+| **[spot](https://github.com/isene/spot)**   | Presenter tools, four modes from one binary: **spotlight** (dimmed snapshot, circular hole tracks the cursor), **draw** (click-drag annotation, colour + width configurable), **highlight** (drag-rect that stays bright on a dim surround), **ocr** (drag-rect text grab to clipboard, works on unselectable GUI text) | ~2.4k | 23KB |
 
-Stack them all together and you get a complete X session in **under
-500 KB** of executable code, with zero shared libraries to update,
-patch, or break.
+Stack them all together and you get a complete X session — display
+server included — in **under 1 MB** of executable code, with zero
+shared libraries to update, patch, or break.
 
 ## The keys
 
@@ -89,7 +93,7 @@ Every CHasm tool follows the same conventions:
 ## Build them all
 
 ```bash
-for t in bare show glass tile chasm-bits glyph bolt spot; do
+for t in bare show glass tile frame chasm-bits glyph bolt spot; do
   git clone https://github.com/isene/$t.git
   (cd $t && make)
 done

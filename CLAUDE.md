@@ -20,13 +20,17 @@ The current binaries:
 | **bare**       | Interactive shell |
 | **glass**      | X11 terminal emulator |
 | **tile**       | Tiling window manager |
+| **frame**      | X11 display server (DRM/KMS + evdev, no Xorg) |
 | **strip**      | X11 status bar (lives in the tile repo) |
 | **chasm-bits** | "Asmites" — tiny status-bar segment programs |
 | **show**       | Pager / file viewer with syntax highlighting |
 | **glyph**      | TrueType / OpenType rasterizer |
+| **bolt**       | Screen locker (and bolt-greet, the DRM login greeter) |
+| **spot**       | Presenter tools: spotlight, draw, highlight, ocr |
 
-Together they make up a complete X session in **under 500 KB** of
-executable code with **zero shared libraries** to update or break.
+Together they make up a complete X session, display server included, in
+**under 1 MB** of executable code with **zero shared libraries** to
+update or break.
 
 ## Why
 

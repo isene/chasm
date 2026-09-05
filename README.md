@@ -42,6 +42,7 @@ straight to the kernel and the X server. These days that server is
 | **[glyph](https://github.com/isene/glyph)** | TrueType font rasterizer: TTF/OpenType parser, quadratic Bezier flatten, scanline NZW with 4x4 supersample AA, composite glyphs, UTF-8, variable fonts (fvar+gvar+IUP) | ~5.7k | 47KB |
 | **[bolt](https://github.com/isene/bolt)**   | Screen locker: fullscreen override-redirect, keyboard + pointer grab, baked raw-RGB lock-screen image, suid-root C helper for `crypt()`/shadow auth | ~3.2k | 29KB |
 | **[spot](https://github.com/isene/spot)**   | Presenter tools, four modes from one binary: **spotlight** (dimmed snapshot, circular hole tracks the cursor), **draw** (click-drag annotation, colour + width configurable), **highlight** (drag-rect that stays bright on a dim surround), **ocr** (drag-rect text grab to clipboard, works on unselectable GUI text) | ~2.4k | 23KB |
+| **[hyperlist-display](https://github.com/isene/hyperlist-display)** | Claude Code `MessageDisplay` hook: renders every answer as a tab-indented [HyperList](https://isene.org/hyperlist/), one idea per line, numbered by depth. Display-only, the transcript keeps the markdown. `/hl` toggles it. Replaced a 52 ms Python hook that fired per streamed chunk | ~4.8k | 50KB |
 
 Stack them all together and you get a complete X session — display
 server included — in **under 1 MB** of executable code, with zero

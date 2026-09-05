@@ -27,6 +27,7 @@ The current binaries:
 | **glyph**      | TrueType / OpenType rasterizer |
 | **bolt**       | Screen locker (and bolt-greet, the DRM login greeter) |
 | **spot**       | Presenter tools: spotlight, draw, highlight, ocr |
+| **hyperlist-display** | Claude Code display hook: every answer rendered as a HyperList |
 
 Together they make up a complete X session, display server included, in
 **under 1 MB** of executable code with **zero shared libraries** to

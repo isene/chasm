@@ -1,0 +1,85 @@
+#!/bin/bash
+# chasm-release: build every CHasm repo and publish one tarball.
+#
+#   chasm-release                    build, stage, tar, publish as the latest
+#                                    GitHub release of isene/chasm
+#   chasm-release --stage DIR        build and stage into DIR, publish nothing
+#                                    (chasm-install --build uses this)
+#   --root DIR                       where the sibling repos live
+#                                    (default: the directory above this one)
+#
+# The tarball unpacks to chasm/ with bin/, lib/systemd/, share/ and a
+# VERSIONS file. chasm-install knows that layout.
+set -euo pipefail
+
+HERE=$(cd "$(dirname "$0")" && pwd)
+ROOT=$(dirname "$HERE")
+STAGE=""
+while [ $# -gt 0 ]; do
+    case $1 in
+        --stage) STAGE=$2; shift ;;
+        --root)  ROOT=$2; shift ;;
+        *) echo "chasm-release: unknown option $1" >&2; exit 2 ;;
+    esac
+    shift
+done
+
+REPOS="frame tile glass bare show chasm-bits bolt spot"
+PUBLISH=0
+if [ -z "$STAGE" ]; then
+    TMP=$(mktemp -d); trap 'rm -rf "$TMP"' EXIT
+    STAGE=$TMP/chasm; PUBLISH=1
+fi
+mkdir -p "$STAGE/bin" "$STAGE/lib/systemd" "$STAGE/share/bare/plugins" "$STAGE/share/xcursors"
+
+for r in $REPOS; do
+    [ -d "$ROOT/$r" ] || { echo "chasm-release: missing repo $ROOT/$r" >&2; exit 1; }
+    make -s -C "$ROOT/$r" >/dev/null
+done
+
+put(){ install -m755 "$1" "$STAGE/bin/$2"; }
+put "$ROOT/frame/frame"            frame
+put "$ROOT/tile/tile"              tile
+put "$ROOT/tile/strip"             tile-strip
+put "$ROOT/glass/glass"            glass
+put "$ROOT/bare/bare"              bare
+put "$ROOT/bare/bare-open"         bare-open
+put "$ROOT/show/show"              show
+put "$ROOT/spot/spot"              spot
+put "$ROOT/bolt/bolt"              bolt
+put "$ROOT/bolt/bolt-auth"         bolt-auth
+put "$ROOT/bolt/bolt-greet"        bolt-greet
+put "$ROOT/bolt/greet-session"     greet-session
+put "$ROOT/bolt/bolt-greet-run"    bolt-greet-run
+put "$ROOT/bolt/bolt-greet-auth.example" bolt-greet-auth.example
+put "$ROOT/bolt/chasm-bg"          chasm-bg
+for p in $(sed -n 's/^PROGRAMS *= *//p' "$ROOT/chasm-bits/Makefile"); do
+    put "$ROOT/chasm-bits/$p" "bits-$p"
+done
+put "$HERE/chasm-keys"     chasm-keys
+put "$HERE/chasm-session"  chasm-session
+put "$HERE/chasm-wp"       chasm-wp
+install -m644 "$ROOT/bolt/bolt-greet.service" "$STAGE/lib/systemd/"
+install -m755 "$ROOT/bare/plugins/ask" "$ROOT/bare/plugins/suggest" "$STAGE/share/bare/plugins/"
+cp -r "$ROOT/frame/test/xcursors/." "$STAGE/share/xcursors/"
+
+: > "$STAGE/VERSIONS"
+for r in $REPOS; do
+    v=$(grep -o 'version-[0-9.]*' "$ROOT/$r/README.md" | head -1)
+    printf '%s %s\n' "$r" "${v#version-}" >> "$STAGE/VERSIONS"
+done
+printf 'built %s\n' "$(date -u +%Y-%m-%dT%H:%MZ)" >> "$STAGE/VERSIONS"
+
+echo "staged $(ls "$STAGE/bin" | wc -l) programs in $STAGE"
+[ "$PUBLISH" = 1 ] || exit 0
+
+TAR=$TMP/chasm-amd64.tar.gz
+tar -czf "$TAR" -C "$TMP" chasm
+TAG=r$(date +%Y%m%d)
+if gh release view "$TAG" -R isene/chasm >/dev/null 2>&1; then
+    gh release upload "$TAG" "$TAR" -R isene/chasm --clobber
+else
+    gh release create "$TAG" "$TAR" -R isene/chasm --latest \
+        --title "CHasm $TAG" --notes "$(printf 'Prebuilt static amd64 binaries for chasm-install.\n\n```\n%s\n```' "$(cat "$STAGE/VERSIONS")")"
+fi
+echo "published $TAG ($(du -h "$TAR" | cut -f1))"

@@ -4,11 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>CHasm - x86_64 Assembly Desktop</title>
-  <meta name="description" content="CHasm is a small Linux desktop suite written entirely in x86_64 assembly: shell, terminal emulator, tiling window manager, status bar, file viewer, font rasterizer, screen locker. No libc, no toolkit, no dynamic linking.">
+  <meta name="description" content="CHasm is a small Linux desktop suite written entirely in x86_64 assembly. Shell, terminal, window manager, status bar, display server, locker. No libc, no toolkit, no dynamic linking.">
   <link rel="icon" href="img/chasm.svg" type="image/svg+xml">
   <link rel="stylesheet" href="style.css">
   <!-- OpenGraph -->
-  <meta property="og:title" content="CHasm — x86_64 Assembly Desktop">
+  <meta property="og:title" content="CHasm: x86_64 Assembly Desktop">
   <meta property="og:description" content="A complete X session in under 500 KB of executable code, with zero shared libraries.">
   <meta property="og:type" content="website">
   <meta property="og:image" content="img/chasm.svg">
@@ -30,8 +30,9 @@
         <img src="https://img.shields.io/badge/runtime-zero-brightgreen" alt="zero runtime">
       </div>
       <div class="cta">
-        <a href="#tools" class="primary">Browse the tools</a>
-        <a href="https://github.com/isene" class="secondary">GitHub</a>
+        <a href="#install" class="primary">Try it</a>
+        <a href="#tools" class="secondary">Browse the tools</a>
+        <a href="https://github.com/isene/chasm" class="secondary">GitHub</a>
       </div>
     </div>
   </header>
@@ -117,7 +118,7 @@
       <p class="section-intro">
         Seven asm binaries that together form a complete X session,
         plus four Rust TUI configurators (the only non-asm parts of
-        the suite — writing a configurator in pure asm would defeat
+        the suite: writing a configurator in pure asm would defeat
         the whole point).
       </p>
       <div class="grid">
@@ -172,7 +173,7 @@
           <p class="card-desc">
             Tiling window manager: 10 workspaces, per-workspace tabs,
             row-of-squares bar, smart cycling, stash. Bundles
-            <strong>strip</strong> — the X11 status bar that hosts
+            <strong>strip</strong>, the X11 status bar that hosts
             the asmites.
           </p>
           <div class="card-meta">
@@ -373,23 +374,39 @@
 
   <section id="install" class="install">
     <div class="container">
-      <h2>Build them all</h2>
+      <h2>Try it</h2>
       <p class="section-intro">
-        Each tool is one .asm file (or a small set), assembled with
-        NASM and linked with ld. No autotools, no Make targets to
-        memorise, no <code>./configure</code>.
+        Three commands. The whole desktop: display server, window
+        manager, status bar, terminal, shell, locker, greeter, five
+        wallpapers. Prebuilt static binaries, a 300 KB download.
+      </p>
+      <pre><span class="cmd">git clone https://github.com/isene/chasm</span>
+<span class="cmd">cd chasm</span>
+<span class="cmd">./chasm-install</span></pre>
+      <p class="section-intro" style="margin-top:1.5rem;">
+        The installer puts the binaries in <code>/usr/local/bin</code>,
+        installs the fonts the suite reads, drops default config files
+        into your home (yours are kept), bakes the first wallpaper and
+        adds a <strong>CHasm</strong> entry to your login screen. It
+        asks one question: whether <strong>bolt-greet</strong> should
+        become the login screen. Say no and your boot is untouched.
+      </p>
+      <p class="section-intro">
+        Then log out and pick CHasm. Or stop the login screen, go to a
+        text console and run <code>sudo chasm-session</code>: that is
+        the whole suite on <strong>frame</strong>, the assembly X
+        server, with no Xorg anywhere. Inside, <code>Mod4+Return</code>
+        opens a terminal and <code>Mod4+?</code> shows every key.
+      </p>
+      <p class="section-intro" style="margin-top:1.5rem;">
+        Prefer to build? Each tool is one .asm file (or a small set),
+        assembled with NASM and linked with ld. No autotools, no
+        <code>./configure</code>. <code>./chasm-install --build</code>
+        does it for every repo, or by hand:
       </p>
       <pre><span class="cmd">git clone https://github.com/isene/bare && cd bare</span>
 <span class="cmd">nasm -f elf64 bare.asm -o bare.o &amp;&amp; ld bare.o -o bare</span>
 <span class="cmd">install -m 755 bare ~/bin/</span></pre>
-      <p class="section-intro" style="margin-top:1.5rem;">
-        Same recipe for <strong>glass</strong>, <strong>tile</strong>,
-        <strong>show</strong>, <strong>glyph</strong>,
-        <strong>bolt</strong>. Each repo has a one-line build
-        command at the top of its README. <strong>chasm-bits</strong>
-        ships a <code>Makefile</code> because it builds many small
-        binaries at once.
-      </p>
     </div>
   </section>
 
@@ -415,7 +432,7 @@
         Public domain (Unlicense). Borrow or steal whatever you want.
       </p>
       <p>
-        — <a href="https://isene.com">Geir Isene</a>
+        <a href="https://isene.com">Geir Isene</a>
       </p>
     </div>
   </footer>

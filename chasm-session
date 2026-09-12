@@ -1,0 +1,151 @@
+#!/bin/bash
+# chasm-session: start the CHasm desktop.
+#
+# Two ways in, one script:
+#
+#   from a login screen   the "CHasm" entry in gdm/lightdm/sddm runs this as
+#                         you, with DISPLAY set. tile starts on that Xorg.
+#
+#   from a text console   sudo chasm-session. frame, the assembly X server,
+#                         takes the screen (DRM + evdev, no Xorg). tile and
+#                         everything it spawns run as you, not as root.
+#                         Quit with Ctrl+Alt+Backspace.
+#
+# bolt-greet takes the second way with GREETER=1 and CHASM_USER set.
+set -u
+
+# ---- login screen: tile on Xorg -----------------------------------------
+if [ -n "${DISPLAY:-}" ] && [ "$(id -u)" -ne 0 ]; then
+    export XDG_SESSION_TYPE=x11
+    unset WAYLAND_DISPLAY
+    systemctl --user set-environment XDG_SESSION_TYPE=x11 2>/dev/null || true
+    dbus-update-activation-environment --systemd DISPLAY XDG_SESSION_TYPE 2>/dev/null || true
+    xsetroot -cursor_name left_ptr 2>/dev/null || true
+    exec tile
+fi
+
+# ---- console or greeter: tile on frame -----------------------------------
+if [ "$(id -u)" -ne 0 ]; then
+    echo "From a text console (Ctrl+Alt+F3), with the login screen stopped:"
+    echo "    sudo systemctl stop gdm3      # or lightdm, sddm"
+    echo "    sudo chasm-session"
+    exit 1
+fi
+for dm in gdm3 gdm lightdm sddm; do
+    if systemctl is-active --quiet "$dm" 2>/dev/null; then
+        echo "$dm is running. Stop it first: sudo systemctl stop $dm"; exit 1
+    fi
+done
+U=${CHASM_USER:-${SUDO_USER:-}}
+if [ -z "$U" ] || [ "$U" = root ]; then
+    echo "Which user should the desktop run as? CHASM_USER=name sudo chasm-session"; exit 1
+fi
+UHOME=$(getent passwd "$U" | cut -d: -f6)
+UIDN=$(id -u "$U")
+for b in frame tile glass; do
+    command -v "$b" >/dev/null || { echo "missing $b: run chasm-install first"; exit 1; }
+done
+FRAME=$(command -v frame)
+PREFIX=$(dirname "$(dirname "$FRAME")")
+
+# Logs under the user's ~/.cache, not /tmp: a freeze that forces a reboot
+# must not wipe the record. Keep the last ten sessions.
+LOG_ROOT=$UHOME/.cache/chasm/logs
+LOG=$LOG_ROOT/$(date +%Y%m%d-%H%M%S)
+mkdir -p "$LOG"
+ls -1dt "$LOG_ROOT"/* 2>/dev/null | tail -n +11 | while read -r d; do rm -rf "$d"; done
+chown -R "$U" "$UHOME/.cache/chasm"
+log(){ printf '[%s] %s\n' "$(date +%T)" "$*"; }
+
+N=8
+for n in 8 12 13 14 15 16 17 18; do
+    [ -e "/tmp/.X11-unix/X$n" ] || { N=$n; break; }
+done
+export DISPLAY=":$N"
+
+PIDS=(); FRAME_PID=""; ACTVT=""
+cleanup(){
+    trap - EXIT INT TERM
+    log "cleanup"
+    # Kill only what we started, by PID. Never by name.
+    for p in "${PIDS[@]}"; do
+        kill -TERM -- "-$p" 2>/dev/null; pkill -P "$p" 2>/dev/null; kill "$p" 2>/dev/null
+    done
+    # frame's SIGINT handler restores the panel for the next DRM master. A
+    # SIGKILL skips that and leaves the screen wedged, so wait up to 3 s.
+    [ -n "$FRAME_PID" ] && kill -INT "$FRAME_PID" 2>/dev/null
+    for _ in $(seq 1 30); do
+        [ -n "$FRAME_PID" ] && kill -0 "$FRAME_PID" 2>/dev/null || break
+        sleep 0.1
+    done
+    for p in "${PIDS[@]}"; do kill -KILL -- "-$p" 2>/dev/null; kill -9 "$p" 2>/dev/null; done
+    [ -n "$FRAME_PID" ] && kill -9 "$FRAME_PID" 2>/dev/null
+    rm -f "/tmp/.X11-unix/X$N"
+    [ -n "$ACTVT" ] && chown root "/dev/$ACTVT" 2>/dev/null
+    echo "Logs: $LOG"
+    [ "${GREETER:-0}" = 1 ] || echo "Login screen again: sudo systemctl start gdm3   (or lightdm, sddm)"
+}
+trap cleanup EXIT INT TERM
+
+# ---- frame, as the user ---------------------------------------------------
+# The video and input groups cover /dev/dri and /dev/input, the kernel hands
+# DRM master to the sole opener, and VT switching needs one capability
+# stamped on the binary. The active VT is chowned to the user for the
+# session, as a display manager would. If rootless frame dies within two
+# seconds, frame runs as root instead so the desktop still comes up.
+rm -f "/tmp/.X11-unix/X$N" /tmp/frame_fb[AB].raw /tmp/frame_dump_*.raw
+setcap cap_sys_tty_config+ep "$FRAME" 2>/dev/null || log "WARN: setcap failed"
+read -r ACTVT < /sys/class/tty/tty0/active
+chown "$U" "/dev/$ACTVT" 2>/dev/null || log "WARN: chown $ACTVT failed"
+log "frame on :$N as $U"
+runuser -u "$U" -- env HOME="$UHOME" "$FRAME" "$N" --display > "$LOG/frame.log" 2>&1 &
+FRAME_PID=$!
+sleep 2
+if ! kill -0 "$FRAME_PID" 2>/dev/null; then
+    log "frame as $U died, running it as root. Last lines:"
+    tail -5 "$LOG/frame.log"
+    "$FRAME" "$N" --display >> "$LOG/frame.log" 2>&1 &
+    FRAME_PID=$!
+    sleep 1
+    kill -0 "$FRAME_PID" 2>/dev/null || { log "frame died:"; cat "$LOG/frame.log"; exit 1; }
+fi
+grep -q 'compositor: mode' "$LOG/frame.log" || log "WARN: compositor did not engage (DRM master held elsewhere?)"
+
+# ---- the session, as the user --------------------------------------------
+# GTK gets software rendering (frame has no GL), no portals, no AT-SPI.
+# XCURSOR_PATH holds frame's one-cursor theme so pressable things show the
+# hand cursor.
+SESSION_ENV=(DISPLAY=":$N"
+             HOME="$UHOME" USER="$U" LOGNAME="$U"
+             XDG_RUNTIME_DIR="/run/user/$UIDN"
+             DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$UIDN/bus"
+             PATH="$UHOME/bin:$UHOME/.local/bin:$PREFIX/bin:/usr/local/bin:/usr/bin:/bin"
+             XDG_DATA_DIRS="${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
+             LANG="${LANG:-C.UTF-8}" XDG_SESSION_TYPE=x11
+             XCURSOR_PATH="$PREFIX/share/chasm/xcursors"
+             NO_AT_BRIDGE=1 GDK_BACKEND=x11 GDK_DISABLE=gl GSK_RENDERER=cairo
+             LIBGL_ALWAYS_SOFTWARE=1 GTK_USE_PORTAL=0 ADW_DISABLE_PORTAL=1
+             GEGL_USE_OPENCL=no)
+runsession(){ setsid runuser -u "$U" -- env "${SESSION_ENV[@]}" "$@"; }
+
+# File dialogs go through xdg-desktop-portal, which opens the X display.
+# Seed DISPLAY into the user's D-Bus activation environment so the portal
+# starts on demand instead of timing out.
+runuser -u "$U" -- env "${SESSION_ENV[@]}" sh -c '
+  dbus-update-activation-environment --systemd DISPLAY 2>/dev/null || true
+  systemctl --user reset-failed xdg-desktop-portal.service xdg-desktop-portal-gtk.service 2>/dev/null || true
+' 2>/dev/null || true
+
+log "tile as $U (autostart from ~/.tilerc)"
+runsession tile > "$LOG/tile.log" 2>&1 &
+PIDS+=($!)
+
+log "CHasm desktop up on frame. Quit: Ctrl+Alt+Backspace"
+# Drain our stdin so the shared VT does not steal keystrokes meant for the
+# terminals, then block on frame. wait returns early on a trapped signal, so
+# loop until frame is really gone.
+cat >/dev/null 2>&1 <&0 &
+DRAIN=$!
+while kill -0 "$FRAME_PID" 2>/dev/null; do wait "$FRAME_PID" 2>/dev/null; done
+kill "$DRAIN" 2>/dev/null
+FRAME_PID=""

@@ -1,0 +1,11 @@
+# frame config — the CHasm default (only used when frame is the X server).
+# keymap: us (default), no (Norwegian), be (Belgian)
+# keymap = no
+sensitivity = 50
+cursor_color = ffffff
+cursor_transparency = 50
+# Key remaps, xmodmap syntax, applied at startup. Example: CapsLock as Escape.
+# keycode 66 = Escape
+# Screen off (frame blanks the panel itself).
+blank_key = Mod4+F12
+# chasm-bg adds `background = <path>` here when it bakes a wallpaper.

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=CHasm
+Comment=The CHasm desktop: tile, strip, glass and bare, all x86_64 assembly
+Exec=chasm-session
+TryExec=chasm-session
+Type=Application
+DesktopNames=CHasm
+Keywords=tiling;wm;assembly;

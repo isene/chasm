@@ -1,0 +1,27 @@
+#!/bin/bash
+# chasm-wp: next wallpaper. Bound to Mod4+w in the default ~/.tilerc.
+#
+# Walks the images in ~/.local/share/chasm/wallpapers and hands the next one
+# to chasm-bg, which bakes the raw buffers frame, bolt and bolt-greet read.
+# The walk starts from the wallpaper in use, so a reboot never skips one.
+set -e
+DIR=${CHASM_WALLPAPERS:-$HOME/.local/share/chasm/wallpapers}
+CUR=$HOME/.cache/chasm/wallpaper-current
+
+papers=()
+for f in "$DIR"/*.png "$DIR"/*.jpg "$DIR"/*.jpeg; do
+    [ -r "$f" ] && papers+=("$f")
+done
+[ ${#papers[@]} -gt 0 ] || exit 0
+
+cur=""
+[ -r "$CUR" ] && read -r cur < "$CUR"
+idx=-1
+for i in "${!papers[@]}"; do
+    [ "${papers[$i]}" = "$cur" ] && { idx=$i; break; }
+done
+idx=$(( (idx + 1) % ${#papers[@]} ))
+
+mkdir -p "$HOME/.cache/chasm"
+printf '%s\n' "${papers[$idx]}" > "$CUR"
+exec chasm-bg "${papers[$idx]}" >/dev/null 2>&1

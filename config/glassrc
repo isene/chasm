@@ -1,0 +1,42 @@
+# glass config — the CHasm default. Edit by hand or with glassconf.
+bg = #000000
+fg = #ffffff
+cursor = #dd2222
+font_size = 18
+font_weight = bold
+# TTF rasteriser (embedded glyph engine + XRender). Comment out to fall
+# back to the bitmap X core font.
+font_path = /usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf
+font_path_fallback = /usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf
+opacity = 100
+cursor_blink = 0
+unfocused_dim = 0
+# Alt+b walks these backgrounds, Alt+t these opacities.
+bg_cycle = #000000,#181818,#13131f,#190600,#0b0b28,#012027,#051a05,#1f041f,#26170e
+opacity_cycle = 100,75,50,25,0
+# Links still open on click; no underline under every linked cell.
+osc8_underline = 0
+visual_bell = 0
+
+color0  = #000000
+color1  = #de4b30
+color2  = #39dc1e
+color3  = #ee9422
+color4  = #2e5cef
+color5  = #a460f2
+color6  = #47a3d7
+color7  = #ffffff
+color8  = #222222
+color9  = #de4b30
+color10 = #71ff59
+color11 = #ffa83a
+color12 = #567eff
+color13 = #c490ff
+color14 = #50c0ff
+color15 = #eeeeee
+
+key.font_inc = alt+plus
+key.font_dec = alt+minus
+key.font_reset = alt+underscore
+key.bg_cycle = alt+b
+key.opacity = alt+t

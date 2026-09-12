@@ -269,17 +269,36 @@ treat them as *style* rules, not *performance* rules.
 - The umbrella `README.md` is the public-facing landing page.
 - The `img/` dir holds `chasm.svg` (logo) and `screenshot.png`
   (referenced by README).
-- The only code here is `chasm-keys`, a bash (builtins-only) script
-  that prints the suite's live key table (parses ~/.tilerc, ~/.framerc,
-  ~/.glassrc). `chasm-keys --popup` prints the same table as tagged
-  lines (H/S/R + TAB) for tile's `keys` action, the Mod4+? key
-  reference popup (tile v0.1.55). The tile rows come from the rc file;
-  the frame and glass rows are fixed lists in the script, so **a new
-  frame or glass key must get its row added there**, or the popup
-  drifts. `chasm-kb` (the old feh keyboard picture) is unbound since
-  2026-09-12 and kept only for the image. A pkill-or-launch toggle must
-  live in a script, never inline in a tilerc bind: the launch half of
-  the line matches the pkill pattern and the shell kills itself.
+- The code here is suite-wide glue, nothing else:
+  - `chasm-keys`: bash (builtins-only) script that prints the suite's
+    live key table from ~/.tilerc, ~/.framerc, ~/.glassrc. `--popup`
+    prints tagged lines (H/S/R + TAB) for tile's `keys` action, the
+    Mod4+? popup (tile v0.1.55). Tile rows come from the rc file; the
+    frame and glass rows are fixed lists in the script, so **a new
+    frame or glass key must get its row added there**. `chasm-kb` (the
+    old feh keyboard picture) is unbound since 2026-09-12 and kept only
+    for the image. A pkill-or-launch toggle must live in a script, never
+    inline in a tilerc bind: the launch half of the line matches the
+    pkill pattern and the shell kills itself.
+  - `chasm-install`: the one-command install for someone trying the
+    suite. Fetches `chasm-amd64.tar.gz` from the latest GitHub release
+    of this repo, installs to /usr/local/bin, drops `config/*` into the
+    home (never overwrites), installs `wallpapers/`, adds
+    `chasm.desktop` to the login screen, optional greeter.
+    `--prefix DIR --home DIR --tarball FILE` test it without root.
+  - `chasm-release`: builds every sibling repo, stages the tarball,
+    publishes it with `gh` (tag rYYYYMMDD). **Run it after any repo
+    release**, or the installer hands people stale binaries. The status
+    bar ships as `tile-strip` (binutils owns `strip`; a bare `strip`
+    call in a script here starts the bar instead).
+  - `chasm-session`: the session launcher. With DISPLAY set and a
+    normal uid it execs tile (login-screen path). As root from a
+    console it starts frame, then tile as `$SUDO_USER`/`CHASM_USER`.
+    bolt's greet-session calls it for both paths.
+  - `chasm-wp`: wallpaper cycle over ~/.local/share/chasm/wallpapers.
+  - `config/`: the PUBLIC default rc files. No personal paths, names,
+    hosts or org names, ever. Absolute asmite paths in striprc keep
+    strip on its no-shell exec path.
   All other code belongs in one of the project repos.
 - The suite key scheme (2026-07-14 harmonization): plain Mod4 = the
   desktop (safe, frequent — tile ops, spot modes, frame's n/b/z

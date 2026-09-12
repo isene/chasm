@@ -1,0 +1,137 @@
+# tile config — the CHasm default. Edit by hand or with tileconf.
+# Reload: Mod4+Shift+r.  Restart tile in place: Mod4+Shift+x.
+# Mod4 is the Win/Super key. Mod4+? (Mod4+Shift+plus) shows every key.
+
+# === Autostart (once at start, not on reload) ===
+exec tile-strip                      # status bar; segments in ~/.striprc
+exec nm-applet                       # network tray icon (harmless if missing)
+
+# === Spawn ===
+bind Mod4+Return        exec glass
+bind Mod4+Shift+Return  exec-here glass          # same cwd as the focused glass
+
+# === Window management ===
+bind Mod4+q             kill
+bind Mod4+Shift+g       gather                   # collect lost windows
+
+# === Tabs (within a workspace) ===
+bind Mod4+Up            focus next-tab
+bind Mod4+Down          focus prev-tab
+bind Mod4+comma         move-tab left
+bind Mod4+period        move-tab right
+
+# === Workspaces ===
+bind Mod4+1             workspace 1
+bind Mod4+2             workspace 2
+bind Mod4+3             workspace 3
+bind Mod4+4             workspace 4
+bind Mod4+5             workspace 5
+bind Mod4+6             workspace 6
+bind Mod4+7             workspace 7
+bind Mod4+8             workspace 8
+bind Mod4+9             workspace 9
+bind Mod4+0             workspace 10
+bind Mod4+Right         workspace next-populated
+bind Mod4+Left          workspace prev-populated
+
+# === Move focused window to workspace ===
+bind Mod4+Shift+1       move-to 1
+bind Mod4+Shift+2       move-to 2
+bind Mod4+Shift+3       move-to 3
+bind Mod4+Shift+4       move-to 4
+bind Mod4+Shift+5       move-to 5
+bind Mod4+Shift+6       move-to 6
+bind Mod4+Shift+7       move-to 7
+bind Mod4+Shift+8       move-to 8
+bind Mod4+Shift+9       move-to 9
+bind Mod4+Shift+0       move-to 10
+
+# === Layout ===
+bind Mod4+Tab           layout toggle            # tabbed → split-h → split-v → master
+
+# === Focus direction (split layouts) ===
+bind Mod4+Shift+Right   focus right
+bind Mod4+Shift+Left    focus left
+bind Mod4+Shift+Up      focus up
+bind Mod4+Shift+Down    focus down
+
+# === Spawn into split ===
+bind Mod4+r             spawn-split right glass
+bind Mod4+l             spawn-split left  glass
+bind Mod4+u             spawn-split up    glass
+bind Mod4+d             spawn-split down  glass
+
+# === Stash (a scratchpad) ===
+bind Mod4+i             stash
+bind Mod4+o             unstash
+
+# === Reload / restart ===
+bind Mod4+Shift+r       reload
+bind Mod4+Shift+x       restart
+
+# === Lock screen ===
+bind Mod4+Ctrl+l        exec bolt
+bind Mod4+Escape        exec bolt
+
+# === Screenshot (needs scrot) ===
+bind Print              exec scrot ~/%Y-%m-%d-%H%M%S_scrot.png
+
+# === Wallpaper cycle ===
+bind Mod4+w             exec chasm-wp
+
+# === Launcher (needs rofi) ===
+bind F12                exec rofi -show run
+
+# === Audio (PipeWire) ===
+bind XF86AudioMute            exec wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
+bind XF86AudioLowerVolume     exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 10%-
+bind XF86AudioRaiseVolume     exec wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 10%+
+
+# === Brightness (needs brightnessctl) ===
+bind XF86MonBrightnessDown    exec brightnessctl s 10%-
+bind XF86MonBrightnessUp      exec brightnessctl s +10%
+
+# === spot: presenter tools (same key launches and kills) ===
+bind Mod4+s             exec sh -c 'pkill -x spot || exec spot'
+bind Mod4+p             exec sh -c 'pkill -x spot || exec spot draw'
+bind Mod4+h             exec sh -c 'pkill -x spot || exec spot highlight'
+bind Mod4+t             exec sh -c 'pkill -x spot || exec spot ocr'
+
+# === Popups ===
+bind Mod4+e             overview                 # every window, j/k, Enter, Esc
+bind Mod4+Shift+plus    keys                     # key reference, live from chasm-keys
+
+# === Bar ===
+# tile's own bar is off; strip draws the workspace pips and the tabs.
+bar_height       = 0
+bar_pad          = 8
+bar_pad_bottom   = 2
+strip_height     = 22
+gap_inner        = 4
+bar_bg           = #111111
+tab_default      = #bbbbbb
+tab_dim_factor   = 80
+tab_palette      = #ee4444,#44ee44,#4444ee,#dddd00,#cc00ee,#ff5c00,#00b7ff,#c58f4f
+ws_active        = #ffffff
+ws_populated     = #555555
+ws_dim_factor    = 60
+ws_color_1       = #e68718
+ws_color_2       = #c17b2a
+ws_color_3       = #b1714d
+ws_color_4       = #ef46dd
+ws_color_5       = #c057b5
+ws_color_6       = #9c6396
+ws_color_7       = #bfb1a9
+ws_color_8       = #a88c7a
+ws_color_9       = #916a51
+ws_color_10      = #fced87
+layout_color     = #aaaaaa
+active_frame     = #ffffff
+
+# === Focus border (off in tabbed layout) ===
+border_width     = 1
+border_focused   = #ffffff
+border_unfocused = #000000
+
+# === Master/stack layout ===
+master_ratio     = 50

@@ -1,0 +1,24 @@
+# strip config — the CHasm default. Edit by hand or with stripconf.
+# `segment NAME [+N] [#RRGGBB] COMMAND [INTERVAL_S]`
+# The asmites (bits-*) are tiny static binaries from chasm-bits. Absolute
+# paths let strip exec them without a shell.
+
+height     = 22
+top_offset = 0
+bg         = #000000
+fg         = #cccccc
+gap        = 8
+
+# Slot colours for the workspace pips (ANSI SGR codes 30..37, 90..97).
+palette.90 = #444444
+
+segment ws       #cccccc @workspaces  0
+segment wintitle +8 #cccccc @wintitle:25  0
+segment time     +16 #eeeeee @clock          60
+segment moon     #a5a5f3 /usr/local/bin/bits-moonphase 1900
+segment cpu      #aaaaaa /usr/local/bin/bits-cpu            4
+segment mem      #aaaaaa /usr/local/bin/bits-mem           10
+segment disk     +6 #555555 /usr/local/bin/bits-disk /      60
+segment ip       +6 #cccccc /usr/local/bin/bits-ip          30
+segment bri      +6 #b7998e /usr/local/bin/bits-brightness  10
+segment bat      +8 #cccccc /usr/local/bin/bits-battery     10

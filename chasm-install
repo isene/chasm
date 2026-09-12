@@ -1,0 +1,181 @@
+#!/bin/bash
+# chasm-install: the whole CHasm desktop in one go.
+#
+#   ./chasm-install              prebuilt binaries from the latest release
+#   ./chasm-install --build      build every repo from source instead
+#   ./chasm-install --greeter    also make bolt-greet the login screen
+#   ./chasm-install --no-greeter never ask about the login screen
+#
+# What it does, in order: install the few packages the suite leans on
+# (fonts, ImageMagick for emoji and wallpapers), put the binaries in
+# /usr/local/bin, drop default rc files into your home (existing ones are
+# kept), install five wallpapers and bake the first, add a "CHasm" entry
+# to the display manager's session list, and optionally set up the
+# greeter. Every step prints what it did.
+#
+# Testing knobs (no root needed): --prefix DIR --home DIR --tarball FILE
+set -euo pipefail
+
+HERE=$(cd "$(dirname "$0")" && pwd)
+PREFIX=/usr/local
+DEST_HOME=$HOME
+BUILD=0
+GREETER=ask
+TARBALL=""
+RELEASE_URL="https://github.com/isene/chasm/releases/latest/download/chasm-amd64.tar.gz"
+REPOS="frame tile glass bare show chasm-bits bolt spot"
+
+while [ $# -gt 0 ]; do
+    case $1 in
+        --build)      BUILD=1 ;;
+        --greeter)    GREETER=yes ;;
+        --no-greeter) GREETER=no ;;
+        --prefix)     PREFIX=$2; shift ;;
+        --home)       DEST_HOME=$2; shift ;;
+        --tarball)    TARBALL=$2; shift ;;
+        -h|--help)    sed -n '2,16p' "$0"; exit 0 ;;
+        *) echo "chasm-install: unknown option $1" >&2; exit 2 ;;
+    esac
+    shift
+done
+
+say(){ printf '\n\033[1m== %s\033[0m\n' "$*"; }
+note(){ printf '   %s\n' "$*"; }
+
+# Root only where the target needs it. A --prefix under $HOME stays yours.
+as_root(){
+    local d; d=$(dirname "$1")
+    while [ ! -e "$d" ]; do d=$(dirname "$d"); done
+    if [ -w "$d" ] || [ "$(id -u)" -eq 0 ]; then "${@:2}"
+    else sudo "${@:2}"; fi
+}
+inst(){ # inst MODE SRC DST
+    as_root "$3" install -Dm"$1" "$2" "$3"
+}
+
+# ── 1. packages ─────────────────────────────────────────────────────────
+say "packages"
+need="fonts-dejavu-core fonts-droid-fallback fonts-noto-color-emoji imagemagick x11-utils x11-xserver-utils"
+want="rofi scrot"
+[ "$BUILD" = 1 ] && need="$need nasm binutils gcc git make"
+if command -v apt-get >/dev/null; then
+    missing=""
+    for p in $need $want; do dpkg -s "$p" >/dev/null 2>&1 || missing="$missing $p"; done
+    if [ -n "$missing" ]; then
+        note "installing:$missing"
+        sudo apt-get install -y $missing
+    else
+        note "all present"
+    fi
+else
+    note "no apt here; make sure you have: $need (optional: $want)"
+fi
+
+# ── 2. binaries ─────────────────────────────────────────────────────────
+say "binaries → $PREFIX/bin"
+STAGE=$(mktemp -d)
+trap 'rm -rf "$STAGE"' EXIT
+if [ "$BUILD" = 1 ]; then
+    SRC=$DEST_HOME/src/chasm
+    mkdir -p "$SRC"
+    for r in $REPOS; do
+        if [ -d "$SRC/$r/.git" ]; then git -C "$SRC/$r" pull -q; else git clone -q "https://github.com/isene/$r" "$SRC/$r"; fi
+        note "building $r"
+        make -s -C "$SRC/$r" >/dev/null
+    done
+    "$HERE/chasm-release" --stage "$STAGE/chasm" --root "$SRC"
+else
+    if [ -n "$TARBALL" ]; then
+        note "using $TARBALL"
+    else
+        TARBALL=$STAGE/chasm-amd64.tar.gz
+        note "fetching $RELEASE_URL"
+        curl -fsSL -o "$TARBALL" "$RELEASE_URL"
+    fi
+    tar -xzf "$TARBALL" -C "$STAGE"
+fi
+BIN=$STAGE/chasm/bin
+[ -x "$BIN/frame" ] || { echo "chasm-install: no binaries found in $STAGE" >&2; exit 1; }
+for b in "$BIN"/*; do
+    n=$(basename "$b")
+    case $n in
+        bolt-auth) inst 4755 "$b" "$PREFIX/bin/$n" ;;   # suid root: reads shadow for bolt
+        *)         inst 0755 "$b" "$PREFIX/bin/$n" ;;
+    esac
+done
+note "$(ls "$BIN" | wc -l) programs installed"
+for f in "$STAGE"/chasm/share/xcursors/default/index.theme "$STAGE"/chasm/share/xcursors/default/cursors/*; do
+    inst 0644 "$f" "$PREFIX/share/chasm/xcursors/default/${f#*/xcursors/default/}"
+done
+if [ -f "$STAGE/chasm/lib/systemd/bolt-greet.service" ] && [ "$PREFIX" = /usr/local ]; then
+    inst 0644 "$STAGE/chasm/lib/systemd/bolt-greet.service" /etc/systemd/system/bolt-greet.service
+fi
+if [ -f "$STAGE/chasm/VERSIONS" ]; then
+    inst 0644 "$STAGE/chasm/VERSIONS" "$PREFIX/share/chasm/VERSIONS"
+    note "versions: $(tr '\n' ' ' < "$STAGE/chasm/VERSIONS")"
+fi
+
+# ── 3. configs (kept if you already have one) ───────────────────────────
+say "configs → $DEST_HOME"
+for rc in tilerc striprc glassrc barerc framerc; do
+    if [ -e "$DEST_HOME/.$rc" ]; then note "~/.$rc kept (yours)"
+    else install -m644 "$HERE/config/$rc" "$DEST_HOME/.$rc"; note "~/.$rc installed"; fi
+done
+mkdir -p "$DEST_HOME/.bare/plugins"
+for p in "$STAGE"/chasm/share/bare/plugins/*; do
+    [ -e "$p" ] && install -m755 "$p" "$DEST_HOME/.bare/plugins/$(basename "$p")"
+done
+
+# ── 4. wallpapers ───────────────────────────────────────────────────────
+say "wallpapers → $DEST_HOME/.local/share/chasm/wallpapers"
+WP=$DEST_HOME/.local/share/chasm/wallpapers
+mkdir -p "$WP" "$DEST_HOME/.cache/chasm"
+for w in "$HERE"/wallpapers/*.png; do install -m644 "$w" "$WP/$(basename "$w")"; done
+set -- "$WP"/*.png; first=$1
+printf '%s\n' "$first" > "$DEST_HOME/.cache/chasm/wallpaper-current"
+if command -v convert >/dev/null; then
+    HOME=$DEST_HOME "$PREFIX/bin/chasm-bg" "$first" 2>&1 | sed 's/^/   /' || note "wallpaper bake failed; Mod4+w retries later"
+else
+    note "ImageMagick missing: wallpaper not baked yet; Mod4+w does it once convert exists"
+fi
+
+# ── 5. session entry for the display manager ────────────────────────────
+if [ "$PREFIX" = /usr/local ]; then
+    say "session entry"
+    inst 0644 "$HERE/chasm.desktop" /usr/share/xsessions/chasm.desktop
+    note "\"CHasm\" now appears in the session menu of gdm, lightdm and sddm"
+fi
+
+# ── 6. greeter (optional) ───────────────────────────────────────────────
+if [ "$PREFIX" = /usr/local ] && [ "$GREETER" != no ]; then
+    if [ "$GREETER" = ask ] && [ -t 0 ]; then
+        printf '\nMake bolt-greet the login screen (replaces gdm/lightdm/sddm)? [y/N] '
+        read -r a; case $a in [yY]*) GREETER=yes ;; *) GREETER=no ;; esac
+    fi
+    if [ "$GREETER" = yes ]; then
+        say "greeter"
+        me=${SUDO_USER:-$USER}
+        sed "s/^GREET_USER=.*/GREET_USER=$me/" "$PREFIX/bin/bolt-greet-auth.example" > "$STAGE/auth"
+        inst 0755 "$STAGE/auth" "$PREFIX/bin/bolt-greet-auth"
+        for dm in gdm3 gdm lightdm sddm; do
+            if systemctl is-enabled --quiet "$dm" 2>/dev/null; then sudo systemctl disable "$dm"; note "$dm disabled"; fi
+        done
+        sudo systemctl enable bolt-greet >/dev/null
+        sudo loginctl enable-linger "$me" 2>/dev/null || true
+        note "bolt-greet enabled for $me; takes effect at next boot"
+        note "undo: sudo systemctl disable bolt-greet && sudo systemctl enable gdm3"
+    fi
+fi
+
+# ── done ────────────────────────────────────────────────────────────────
+say "done"
+cat <<EOF
+   Start it, pick one:
+     • log out and choose "CHasm" at your login screen (tile on Xorg)
+     • from a text console (Ctrl+Alt+F3), with the login screen stopped
+       (sudo systemctl stop gdm3, or lightdm, sddm):  sudo chasm-session
+       frame, the assembly X server, then drives the screen. Ctrl+Alt+Backspace quits.
+     • reboot into the greeter, if you said yes above
+
+   Inside: Mod4+Return opens a terminal, Mod4+? shows every key, Mod4+w cycles wallpapers.
+EOF

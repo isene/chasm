@@ -272,10 +272,15 @@ treat them as *style* rules, not *performance* rules.
 - The code here is suite-wide glue, nothing else:
   - `chasm-keys`: bash (builtins-only) script that prints the suite's
     live key table from ~/.tilerc, ~/.framerc, ~/.glassrc. `--popup`
-    prints tagged lines (H/S/R + TAB) for tile's `keys` action, the
-    Mod4+? popup (tile v0.1.55). Tile rows come from the rc file; the
-    frame and glass rows are fixed lists in the script, so **a new
-    frame or glass key must get its row added there**. `chasm-kb` (the
+    prints tagged lines for tile's `keys` action, the Mod4+? popup:
+    `H<tab>header`, `S<tab>sub-header`, `R<tab>combo<tab>command<tab>
+    description` (tile v0.1.56 shows the description by default, Tab
+    shows the command, typing filters). A tile bind's description is
+    its trailing `# comment` in ~/.tilerc, else `act_desc`/`exec_desc`
+    in the script render the action in plain words; extend those
+    tables when a new action or common exec appears. Tile rows come
+    from the rc file; the frame and glass rows are fixed lists in the
+    script, so **a new frame or glass key must get its row added there**. `chasm-kb` (the
     old feh keyboard picture) is unbound since 2026-09-12 and kept only
     for the image. A pkill-or-launch toggle must live in a script, never
     inline in a tilerc bind: the launch half of the line matches the

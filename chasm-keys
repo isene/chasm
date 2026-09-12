@@ -1,5 +1,5 @@
 #!/bin/bash
-# chasm-keys — print every key combo the CHasm suite owns.
+# chasm-keys: print every key combo the CHasm suite owns.
 #
 # The tile/spot section is parsed LIVE from ~/.tilerc (bind lines,
 # grouped by the file's own `# === section ===` headers), so it never
@@ -7,20 +7,27 @@
 # the suite's fixed realms, with ~/.framerc / ~/.glassrc overrides
 # honoured where they exist.
 #
-# Realms:  Mod4        = the desktop (tile, frame, spot) — safe keys
+# Realms:  Mod4        = the desktop (tile, frame, spot), safe keys
 #          Mod4+Shift  = acts on a window / restarts something
 #          Alt         = glass (everything unbound passes through as Meta)
 #
+# Every row carries two texts: the command behind the key and a short
+# description of what it does. For a tile bind the description is the
+# trailing `# comment` on its line in ~/.tilerc when there is one, else
+# a plain-words rendering of the action. The terminal table prints the
+# description.
+#
 # Bash builtins only (CHasm rule: no awk/sed/interpreter spawns).
 #
-# `chasm-keys --popup` prints the same table as tagged lines for tile's
+# `chasm-keys --popup` prints the table as tagged lines for tile's
 # Mod4+? key-reference popup: H<tab>group header, S<tab>sub-header,
-# R<tab>combo<tab>action, blank = spacer. Tile parses exactly this.
+# R<tab>combo<tab>command<tab>description, blank = spacer. Tile parses
+# exactly this; Tab in the popup flips between the two texts.
 
 popup=0
 [[ ${1-} == --popup ]] && popup=1
 
-# Style only when stdout is a terminal — piped output (show, less,
+# Style only when stdout is a terminal. Piped output (show, less,
 # grep) gets plain text instead of raw escape codes.
 if [[ -t 1 ]]; then
     B=$'\e[1m'; D=$'\e[2m'; R=$'\e[0m'
@@ -29,14 +36,83 @@ else
 fi
 
 if (( popup )); then
-    row() { printf 'R\t%s\t%s\n' "$1" "$2"; }
+    row() { printf 'R\t%s\t%s\t%s\n' "$1" "$2" "$3"; }
     hdr() { printf '\nH\t%s\n' "$1"; }
     sub() { printf 'S\t%s\n' "$1"; }      # no spacer: the popup packs tight
 else
-    row() { printf '  %-24s %s\n' "$1" "$2"; }
+    row() { printf '  %-24s %s\n' "$1" "$3"; }
     hdr() { printf '\n%s%s%s\n' "$B" "$1" "$R"; }
     sub() { printf '\n  %s%s%s\n' "$D" "$1" "$R"; }
 fi
+
+# exec_desc <command line>: plain words for the programs tile spawns.
+exec_desc() {
+    local c=$1 first
+    case $c in
+        glass)                    printf 'new terminal' ;;
+        glass\ --class*)          printf 'new terminal (%s)' "${c#glass --class }" ;;
+        glass\ --\ *)             printf 'terminal running %s' "${c#glass -- }" ;;
+        *bolt*)                   printf 'lock the screen' ;;
+        *scrot*)                  printf 'screenshot' ;;
+        *chasm-wp*|*wp-cycle*)    printf 'next wallpaper' ;;
+        *rofi*)                   printf 'launcher' ;;
+        *set-mute*toggle*)        printf 'mute toggle' ;;
+        *set-mute*\ 1)            printf 'mute' ;;
+        *set-mute*\ 0)            printf 'unmute' ;;
+        *set-volume*%-*)          printf 'volume down' ;;
+        *set-volume*%+*)          printf 'volume up' ;;
+        *brightnessctl*%-*)       printf 'brightness down' ;;
+        *brightnessctl*+*)        printf 'brightness up' ;;
+        *brightnessctl\ s\ *)     printf 'brightness %s' "${c##* }" ;;
+        *dpms\ force\ off*)       printf 'screen off' ;;
+        *xset\ s\ on*)            printf 'screen blanking on' ;;
+        *xset\ s\ off*)           printf 'screen blanking off' ;;
+        *rfkill\ unblock*)        printf 'bluetooth on' ;;
+        *rfkill\ block*)          printf 'bluetooth off' ;;
+        *spot\ draw*)             printf 'draw on the screen (spot)' ;;
+        *spot\ highlight*)        printf 'highlight a region (spot)' ;;
+        *spot\ ocr*)              printf 'grab text from the screen (spot)' ;;
+        *spot*)                   printf 'spotlight (spot)' ;;
+        *)  first=${c%%[[:space:]]*}
+            case $first in sh|bash) first=${c#*exec }; first=${first%%[[:space:]]*} ;; esac
+            printf 'run %s' "${first##*/}" ;;
+    esac
+}
+
+# act_desc <action>: plain words for a tile action.
+act_desc() {
+    local a=$1 rest dir
+    case $a in
+        kill)                        printf 'close the window' ;;
+        exit)                        printf 'exit tile' ;;
+        gather)                      printf 'collect lost windows' ;;
+        reload)                      printf 'reload ~/.tilerc' ;;
+        restart)                     printf 'restart tile in place' ;;
+        overview)                    printf 'window list popup' ;;
+        keys)                        printf 'this key reference' ;;
+        stash)                       printf 'hide the window (stash)' ;;
+        unstash)                     printf 'bring back the last stashed window' ;;
+        workspace\ next-populated)   printf 'next workspace in use' ;;
+        workspace\ prev-populated)   printf 'previous workspace in use' ;;
+        workspace\ back-and-forth)   printf 'back to the previous workspace' ;;
+        workspace\ *)                printf 'go to workspace %s' "${a#workspace }" ;;
+        move-to\ *)                  printf 'move the window to workspace %s' "${a#move-to }" ;;
+        focus\ next-tab)             printf 'next tab' ;;
+        focus\ prev-tab)             printf 'previous tab' ;;
+        focus\ *)                    printf 'focus the window %s' "${a#focus }" ;;
+        move-tab\ *)                 printf 'move the tab %s' "${a#move-tab }" ;;
+        layout\ toggle)              printf 'cycle the layout' ;;
+        layout\ *)                   printf 'layout: %s' "${a#layout }" ;;
+        spawn-split\ *)
+            rest=${a#spawn-split }; dir=${rest%%[[:space:]]*}; rest=${rest#"$dir"}
+            rest=${rest#"${rest%%[![:space:]]*}"}
+            case $dir in up) dir=above ;; down) dir=below ;; *) dir="to the $dir" ;; esac
+            printf 'open %s %s' "$rest" "$dir" ;;
+        exec-here\ *)                printf '%s, same directory' "$(exec_desc "${a#exec-here }")" ;;
+        exec\ *)                     exec_desc "${a#exec }" ;;
+        *)                           printf '%s' "$a" ;;
+    esac
+}
 
 # ── tile + spot + utility rows: live from ~/.tilerc ─────────────────────
 hdr "TILE + SPOT + UTILITY ROWS   ${D}(live from ~/.tilerc)${R}"
@@ -52,12 +128,16 @@ while IFS= read -r line; do
             combo=${rest%%[[:space:]]*}
             act=${rest#"$combo"}
             act=${act#"${act%%[![:space:]]*}"}
-            [[ $act == *' #'* ]] && { act=${act%%' #'*}; act=${act%"${act##*[![:space:]]}"}; }
+            cmt=""
+            if [[ $act == *' #'* ]]; then
+                cmt=${act#*' #'}; cmt=${cmt#"${cmt%%[![:space:]]*}"}
+                act=${act%%' #'*}; act=${act%"${act##*[![:space:]]}"}
+            fi
             if [[ -n $pend ]]; then
                 sub "$pend"
                 pend=""
             fi
-            row "$combo" "$act"
+            row "$combo" "$act" "${cmt:-$(act_desc "$act")}"
             ;;
     esac
 done < "$HOME/.tilerc"
@@ -76,12 +156,13 @@ while IFS= read -r line; do
             ;;
     esac
 done 2>/dev/null < "$HOME/.framerc"
-row "Mod4+n"             "night-light toggle (warm)"
-row "Mod4+b"             "sunlight toggle (contrast)"
-row "Mod4+z"             "magnifier lens toggle"
-row "$blank"             "blank the panel now (blank_key)"
-row "Ctrl+Alt+Backspace" "zap: end the whole session"
-row "Ctrl+Alt+F1..F12"   "switch virtual terminal"
+f="built into frame"
+row "Mod4+n"             "$f" "night-light toggle (warm)"
+row "Mod4+b"             "$f" "sunlight toggle (contrast)"
+row "Mod4+z"             "$f" "magnifier lens toggle"
+row "$blank"             "blank_key in ~/.framerc" "blank the panel now"
+row "Ctrl+Alt+Backspace" "$f" "zap: end the whole session"
+row "Ctrl+Alt+F1..F12"   "$f" "switch virtual terminal"
 
 # ── glass: the Alt realm ────────────────────────────────────────────────
 hdr "GLASS   ${D}(Alt realm; unbound Alt+keys pass through as Meta)${R}"
@@ -103,13 +184,15 @@ if [[ -r $HOME/.glassrc ]]; then
         esac
     done < "$HOME/.glassrc"
 fi
-row "${g[font_inc]}"    "font size up"
-row "${g[font_dec]}"    "font size down"
-row "${g[font_reset]}"  "font size reset"
-row "${g[bg_cycle]}"    "background colour cycle"
-row "${g[opacity]}"     "opacity cycle"
-row "${g[paste]}"       "paste PRIMARY (same as Shift+Insert)"
-row "Ctrl+Shift+V"      "paste CLIPBOARD"
-row "Shift+Insert"      "paste PRIMARY"
-row "Shift+PgUp/PgDn"   "scrollback"
+k="in ~/.glassrc"
+row "${g[font_inc]}"    "key.font_inc $k"   "font size up"
+row "${g[font_dec]}"    "key.font_dec $k"   "font size down"
+row "${g[font_reset]}"  "key.font_reset $k" "font size reset"
+row "${g[bg_cycle]}"    "key.bg_cycle $k"   "background colour cycle"
+row "${g[opacity]}"     "key.opacity $k"    "opacity cycle"
+row "${g[paste]}"       "key.paste $k"      "paste PRIMARY (same as Shift+Insert)"
+g="built into glass"
+row "Ctrl+Shift+V"      "$g" "paste CLIPBOARD"
+row "Shift+Insert"      "$g" "paste PRIMARY"
+row "Shift+PgUp/PgDn"   "$g" "scrollback"
 printf '\n'

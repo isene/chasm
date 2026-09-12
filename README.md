@@ -100,7 +100,12 @@ Alt+keys pass through to terminal apps as Meta).
 combo on a full-screen overlay, in columns, one colour per group. The
 text comes from [`chasm-keys`](chasm-keys), a builtins-only bash script
 that reads `~/.tilerc`, `~/.framerc` and `~/.glassrc` on every open, so
-a rebound key shows up the next time you look. Any key closes it.
+a rebound key shows up the next time you look.
+
+Type to search: matching rows light up, the rest fade. `Tab` flips
+between what a key does and the command behind it. `Esc` closes. A
+tile bind's description is the `# comment` on its line in `~/.tilerc`,
+so a comment there is what the popup shows.
 
 The same table in a terminal:
 

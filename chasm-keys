@@ -12,6 +12,13 @@
 #          Alt         = glass (everything unbound passes through as Meta)
 #
 # Bash builtins only (CHasm rule: no awk/sed/interpreter spawns).
+#
+# `chasm-keys --popup` prints the same table as tagged lines for tile's
+# Mod4+? key-reference popup: H<tab>group header, S<tab>sub-header,
+# R<tab>combo<tab>action, blank = spacer. Tile parses exactly this.
+
+popup=0
+[[ ${1-} == --popup ]] && popup=1
 
 # Style only when stdout is a terminal — piped output (show, less,
 # grep) gets plain text instead of raw escape codes.
@@ -21,8 +28,15 @@ else
     B=""; D=""; R=""
 fi
 
-row() { printf '  %-24s %s\n' "$1" "$2"; }
-hdr() { printf '\n%s%s%s\n' "$B" "$1" "$R"; }
+if (( popup )); then
+    row() { printf 'R\t%s\t%s\n' "$1" "$2"; }
+    hdr() { printf '\nH\t%s\n' "$1"; }
+    sub() { printf 'S\t%s\n' "$1"; }      # no spacer: the popup packs tight
+else
+    row() { printf '  %-24s %s\n' "$1" "$2"; }
+    hdr() { printf '\n%s%s%s\n' "$B" "$1" "$R"; }
+    sub() { printf '\n  %s%s%s\n' "$D" "$1" "$R"; }
+fi
 
 # ── tile + spot + utility rows: live from ~/.tilerc ─────────────────────
 hdr "TILE + SPOT + UTILITY ROWS   ${D}(live from ~/.tilerc)${R}"
@@ -40,7 +54,7 @@ while IFS= read -r line; do
             act=${act#"${act%%[![:space:]]*}"}
             [[ $act == *' #'* ]] && { act=${act%%' #'*}; act=${act%"${act##*[![:space:]]}"}; }
             if [[ -n $pend ]]; then
-                printf '\n  %s%s%s\n' "$D" "$pend" "$R"
+                sub "$pend"
                 pend=""
             fi
             row "$combo" "$act"
@@ -61,7 +75,7 @@ while IFS= read -r line; do
             blank=$v
             ;;
     esac
-done < "$HOME/.framerc" 2>/dev/null
+done 2>/dev/null < "$HOME/.framerc"
 row "Mod4+n"             "night-light toggle (warm)"
 row "Mod4+b"             "sunlight toggle (contrast)"
 row "Mod4+z"             "magnifier lens toggle"

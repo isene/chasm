@@ -50,15 +50,18 @@ shared libraries to update, patch, or break.
 
 ## The keys
 
-![CHasm keyboard reference](img/chasm-kb.svg)
-
 The suite shares one keyboard scheme: plain **Mod4** is the desktop
 (workspaces, tabs, spot, frame's toggles), **Mod4+Shift** acts on a
 window or restarts a component, and **Alt** belongs to glass (unbound
-Alt+keys pass through to terminal apps as Meta). This repo ships
-[`chasm-keys`](chasm-keys), a small script that prints the complete
-live key table — the tile section is parsed straight from `~/.tilerc`,
-so it never drifts from what is actually bound. Run it in a glass:
+Alt+keys pass through to terminal apps as Meta).
+
+**Mod4+?** opens the key reference: tile's `keys` action paints every
+combo on a full-screen overlay, in columns, one colour per group. The
+text comes from [`chasm-keys`](chasm-keys), a builtins-only bash script
+that reads `~/.tilerc`, `~/.framerc` and `~/.glassrc` on every open, so
+a rebound key shows up the next time you look. Any key closes it.
+
+The same table in a terminal:
 
 ```bash
 chasm-keys

@@ -62,8 +62,8 @@ bind Mod4+u             spawn-split up    glass
 bind Mod4+d             spawn-split down  glass
 
 # === Stash (a scratchpad) ===
-bind Mod4+i             stash
-bind Mod4+o             unstash
+bind Mod4+i             stash                    # put the focused window away
+bind Mod4+Shift+i       unstash                  # bring the last one back (LIFO)
 
 # === Reload / restart ===
 bind Mod4+Shift+r       reload
@@ -98,7 +98,7 @@ bind Mod4+h             exec sh -c 'pkill -x spot || exec spot highlight'
 bind Mod4+t             exec sh -c 'pkill -x spot || exec spot ocr'
 
 # === Popups ===
-bind Mod4+e             overview                 # every window, j/k, Enter, Esc
+bind Mod4+o             overview                 # every window, j/k, Enter, Esc
 bind Mod4+Shift+plus    keys                     # key reference, live from chasm-keys
 
 # === Bar ===

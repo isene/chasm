@@ -269,13 +269,17 @@ treat them as *style* rules, not *performance* rules.
 - The umbrella `README.md` is the public-facing landing page.
 - The `img/` dir holds `chasm.svg` (logo) and `screenshot.png`
   (referenced by README).
-- The only code here is `chasm-keys` — a bash (builtins-only) script
+- The only code here is `chasm-keys`, a bash (builtins-only) script
   that prints the suite's live key table (parses ~/.tilerc, ~/.framerc,
-  ~/.glassrc) — and `chasm-kb`, which toggles `img/chasm-kb.png` (the
-  keyboard reference) in feh. Both are suite-wide by nature, so the
-  umbrella is their home. A pkill-or-launch toggle must live in a
-  script, never inline in a tilerc bind: the launch half of the line
-  matches the pkill pattern and the shell kills itself.
+  ~/.glassrc). `chasm-keys --popup` prints the same table as tagged
+  lines (H/S/R + TAB) for tile's `keys` action, the Mod4+? key
+  reference popup (tile v0.1.55). The tile rows come from the rc file;
+  the frame and glass rows are fixed lists in the script, so **a new
+  frame or glass key must get its row added there**, or the popup
+  drifts. `chasm-kb` (the old feh keyboard picture) is unbound since
+  2026-09-12 and kept only for the image. A pkill-or-launch toggle must
+  live in a script, never inline in a tilerc bind: the launch half of
+  the line matches the pkill pattern and the shell kills itself.
   All other code belongs in one of the project repos.
 - The suite key scheme (2026-07-14 harmonization): plain Mod4 = the
   desktop (safe, frequent — tile ops, spot modes, frame's n/b/z

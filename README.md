@@ -56,6 +56,18 @@ Stack them all together and you get a complete X session, display
 server included, in **under 1 MB** of executable code, with zero
 shared libraries to update, patch, or break.
 
+What that costs at the battery, whole desktop up on frame, wifi on,
+four idle Claude Code sessions open (Dell XPS 14, Core Ultra 7 255H,
+measured 10 September 2026):
+
+| Screen | Watts |
+|--------|-------|
+| at 60 % | 2.63 |
+| blank | 1.64 |
+
+The CHasm programs themselves add about 7 mW. The rest is the screen,
+the chipset and the radios.
+
 ## Try it
 
 Three commands, one desktop:

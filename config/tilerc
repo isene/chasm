@@ -99,6 +99,7 @@ bind Mod4+t             exec sh -c 'pkill -x spot || exec spot ocr'
 
 # === Popups ===
 bind Mod4+o             overview                 # every window, j/k, Enter, Esc
+bind Mod4+f             fullscreen               # focused window takes the whole screen
 bind Mod4+Shift+plus    keys                     # key reference, live from chasm-keys
 
 # === Bar ===

@@ -80,7 +80,8 @@ cd chasm
 
 `chasm-install` fetches the prebuilt static binaries from the
 [latest release](https://github.com/isene/chasm/releases/latest) into
-`/usr/local/bin`. The whole suite is a 300 KB download. It installs the
+`/usr/local/bin`. The whole suite is a small download. It verifies the
+release SHA-256 checksum before installing. It installs the
 few fonts the suite reads and drops default config files into your home
 (yours are kept if you have them).
 
@@ -97,9 +98,11 @@ wallpapers, `Mod4+Escape` locks.
 
 Debian, Ubuntu and Mint get their packages through `apt`; on other
 distros install DejaVu fonts and ImageMagick yourself first.
-`./chasm-install --build` builds everything from source instead of
-downloading (needs nasm, ld, gcc). `./chasm-install --help` lists the
-rest.
+`./chasm-install --build` builds the commits pinned in
+[`sources.lock`](sources.lock) instead of downloading (needs nasm, ld,
+gcc and libcrypt development files). Use `--version TAG` for a specific release and `--rollback` to
+return to the previous bundle. See [support and release instructions](SUPPORT.md)
+for local archives, troubleshooting and maintenance.
 
 ## The keys
 
@@ -152,19 +155,17 @@ Every CHasm tool follows the same conventions:
   based key=value, no JSON/TOML/YAML parsers needed
 - **Unlicense**: public domain
 
-## Build them all
+## Build from source
 
 ```bash
-for t in bare show glass tile frame chasm-bits glyph bolt spot; do
-  git clone https://github.com/isene/$t.git
-  (cd $t && make)
-done
+./chasm-install --build
 ```
 
-Each `make` runs the same two-step build (nasm → ld). Total wall time
-on a modern laptop: under 3 seconds for the entire suite. The release
-tarball that `chasm-install` fetches is made the same way, by
-[`chasm-release`](chasm-release) in this repo.
+This builds and installs the eight core tools from the exact commits in
+[`sources.lock`](sources.lock). It also checks out `glyph`, which `glass`
+includes at build time. The bundle records source commits and tool versions.
+The release tarball is made by [`chasm-release`](chasm-release) in this repo.
+The standalone `glyph` binary and `hyperlist-display` are optional projects.
 
 ## Configuration tools
 
@@ -189,15 +190,10 @@ would defeat the whole point.
 
 ## Status
 
-All six tools are usable today. tile + strip + the chasm-bits asmites
-form the daily-driver desktop. glyph is the newest: a pure-asm TTF
-rasterizer that already renders OpenType variable fonts (interpolating
-between weight masters via gvar deltas + IUP), with the eventual goal
-of replacing glass's X core bitmap fonts so the whole desktop renders
-TTF without dynamic linking. The next milestone is glyph's integration
-into glass; after that, tile's multi-monitor phase.
+The core desktop builds from the pinned sources above. For current feature
+status and hardware limitations, see each component's own repository.
 
 ## License
 
-[Unlicense](https://unlicense.org/): public domain. Take it, fork it,
+[Unlicense](UNLICENSE): public domain. Take it, fork it,
 strip it for parts.

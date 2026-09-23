@@ -1,0 +1,11 @@
+# Core desktop repositories and tested commits. Update together before a release.
+frame 17549794ea0598286be3b3816c5fccf946613252
+tile 3b50f5109e1210c8209c825ceb37ca5d756b0def
+glass ba13fbfca62785d44dfc86f1f0dc0edf0f333bc2
+# Build input for glass; the standalone glyph binary is not bundled.
+glyph f04e68eab8b94b0addb9d59571004467c2beb168
+bare bc59358ff105a1b95d75f79df9f5a746d83770fa
+show c8e9bbb61f0089b158674ef80f8d9cb6ca263a02
+chasm-bits 078618a42a82068e5b8270242c3493201c68cfb6
+bolt 26249cc80ab3b11463951cf0ab3bad9f443aa150
+spot baf0089b05fafc1024e3cfa3b811daacf0a37770

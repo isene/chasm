@@ -1,8 +1,8 @@
 # CHasm — group repo guidance
 
-This is the umbrella repo for the **CHasm** suite. The repo itself
-holds no code — it's a README + screenshot index pointing at the
-individual project repos. This `CLAUDE.md` exists so any new CC
+This is the umbrella repo for the **CHasm** suite. It holds the public
+landing page, install/release/session glue, defaults, and checks; the
+desktop programs live in individual project repos. This `CLAUDE.md` exists so any new CC
 session lands on the same understanding of *what CHasm is for* and
 *what the suite-wide rules are* before touching anything.
 
@@ -285,17 +285,19 @@ treat them as *style* rules, not *performance* rules.
     for the image. A pkill-or-launch toggle must live in a script, never
     inline in a tilerc bind: the launch half of the line matches the
     pkill pattern and the shell kills itself.
-  - `chasm-install`: the one-command install for someone trying the
-    suite. Fetches `chasm-amd64.tar.gz` from the latest GitHub release
-    of this repo, installs to /usr/local/bin, drops `config/*` into the
-    home (never overwrites), installs `wallpapers/`, adds
-    `chasm.desktop` to the login screen, optional greeter.
-    `--prefix DIR --home DIR --tarball FILE` test it without root.
-  - `chasm-release`: builds every sibling repo, stages the tarball,
-    publishes it with `gh` (tag rYYYYMMDD). **Run it after any repo
-    release**, or the installer hands people stale binaries. The status
-    bar ships as `tile-strip` (binutils owns `strip`; a bare `strip`
-    call in a script here starts the bar instead).
+  - `chasm-install`: verifies a release archive and SHA-256 sidecar,
+    stages a versioned bundle under `/usr/local/lib/chasm/releases`,
+    then switches `current`. `--rollback` selects the previous bundle.
+    It keeps user rc files and wallpapers, adds `chasm.desktop` to the
+    login screen, and can optionally install the greeter. Test with
+    `--prefix DIR --home DIR --tarball FILE` and `FILE.sha256`.
+  - `chasm-release`: builds the eight core programs from clean checkouts at
+    the commits in `sources.lock` (plus glyph as glass's build input),
+    stages the tarball, and publishes a new
+    immutable tag and checksum with `gh`. Update the lockfile and
+    release when the suite should advance. The status bar ships as
+    `tile-strip` (binutils owns `strip`; a bare `strip` call in a
+    script here starts the bar instead).
   - `chasm-session`: the session launcher. With DISPLAY set and a
     normal uid it execs tile (login-screen path). As root from a
     console it starts frame, then tile as `$SUDO_USER`/`CHASM_USER`.

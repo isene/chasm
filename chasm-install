@@ -1,19 +1,5 @@
 #!/bin/bash
-# chasm-install: the whole CHasm desktop in one go.
-#
-#   ./chasm-install              prebuilt binaries from the latest release
-#   ./chasm-install --build      build every repo from source instead
-#   ./chasm-install --greeter    also make bolt-greet the login screen
-#   ./chasm-install --no-greeter never ask about the login screen
-#
-# What it does, in order: install the few packages the suite leans on
-# (fonts, ImageMagick for emoji and wallpapers), put the binaries in
-# /usr/local/bin, drop default rc files into your home (existing ones are
-# kept), install five wallpapers and bake the first, add a "CHasm" entry
-# to the display manager's session list, and optionally set up the
-# greeter. Every step prints what it did.
-#
-# Testing knobs (no root needed): --prefix DIR --home DIR --tarball FILE
+# Install a verified core desktop bundle; keep the previous version for rollback.
 set -euo pipefail
 
 HERE=$(cd "$(dirname "$0")" && pwd)
@@ -22,160 +8,309 @@ DEST_HOME=$HOME
 BUILD=0
 GREETER=ask
 TARBALL=""
-RELEASE_URL="https://github.com/isene/chasm/releases/latest/download/chasm-amd64.tar.gz"
-REPOS="frame tile glass bare show chasm-bits bolt spot"
-
+VERSION=""
+ROLLBACK=0
 while [ $# -gt 0 ]; do
     case $1 in
-        --build)      BUILD=1 ;;
-        --greeter)    GREETER=yes ;;
-        --no-greeter) GREETER=no ;;
-        --prefix)     PREFIX=$2; shift ;;
-        --home)       DEST_HOME=$2; shift ;;
-        --tarball)    TARBALL=$2; shift ;;
-        -h|--help)    sed -n '2,16p' "$0"; exit 0 ;;
+        --build) BUILD=1; shift ;;
+        --greeter) GREETER=yes; shift ;;
+        --no-greeter) GREETER=no; shift ;;
+        --rollback) ROLLBACK=1; shift ;;
+        --prefix|--home|--tarball|--version)
+            [ $# -ge 2 ] || { echo "chasm-install: $1 needs a value" >&2; exit 2; }
+            case $1 in
+                --prefix) PREFIX=$2 ;; --home) DEST_HOME=$2 ;;
+                --tarball) TARBALL=$2 ;; --version) VERSION=$2 ;;
+            esac
+            shift 2 ;;
+        -h|--help)
+            echo 'Usage: chasm-install [--version TAG | --tarball FILE | --build] [--prefix DIR] [--home DIR] [--greeter | --no-greeter]'
+            echo '       chasm-install --rollback [--prefix DIR]'
+            echo 'Local tarballs require FILE.sha256. --build uses sources.lock, not component HEADs.'
+            echo 'Non-Debian systems need DejaVu/Droid/Noto emoji fonts, ImageMagick, x11-utils and x11-xserver-utils.'
+            exit 0 ;;
         *) echo "chasm-install: unknown option $1" >&2; exit 2 ;;
     esac
-    shift
 done
+[[ $PREFIX = /* && $DEST_HOME = /* ]] || { echo 'chasm-install: prefix and home must be absolute paths' >&2; exit 2; }
+[ "$PREFIX" != / ] || { echo 'chasm-install: / is not a valid prefix' >&2; exit 2; }
+PREFIX=${PREFIX%/}
+if [ -n "$VERSION" ]; then
+    [[ $VERSION =~ ^r[0-9]{8}(-[0-9]{6})?$ ]] || { echo 'chasm-install: invalid release tag' >&2; exit 2; }
+fi
+choices=$BUILD
+[ -z "$TARBALL" ] || choices=$((choices + 1))
+[ -z "$VERSION" ] || choices=$((choices + 1))
+if (( choices > 1 )); then
+    echo 'chasm-install: choose --build, --tarball or --version' >&2; exit 2
+fi
+if (( ROLLBACK && choices > 0 )); then
+    echo 'chasm-install: --rollback takes only --prefix' >&2; exit 2
+fi
 
-say(){ printf '\n\033[1m== %s\033[0m\n' "$*"; }
+say(){ printf '\n== %s\n' "$*"; }
 note(){ printf '   %s\n' "$*"; }
-
-# Root only where the target needs it. A --prefix under $HOME stays yours.
-as_root(){
-    local d; d=$(dirname "$1")
-    while [ ! -e "$d" ]; do d=$(dirname "$d"); done
-    if [ -w "$d" ] || [ "$(id -u)" -eq 0 ]; then "${@:2}"
-    else sudo "${@:2}"; fi
+run_install(){
+    if [ "$PREFIX" = /usr/local ] && [ "$(id -u)" -ne 0 ]; then sudo "$@"; else "$@"; fi
 }
-inst(){ # inst MODE SRC DST
-    as_root "$3" install -Dm"$1" "$2" "$3"
-}
-
-# ── 1. packages ─────────────────────────────────────────────────────────
-say "packages"
-need="fonts-dejavu-core fonts-droid-fallback fonts-noto-color-emoji imagemagick x11-utils x11-xserver-utils"
-want="rofi scrot"
-[ "$BUILD" = 1 ] && need="$need nasm binutils gcc git make"
-if command -v apt-get >/dev/null; then
-    missing=""
-    for p in $need $want; do dpkg -s "$p" >/dev/null 2>&1 || missing="$missing $p"; done
-    if [ -n "$missing" ]; then
-        note "installing:$missing"
-        sudo apt-get install -y $missing
-    else
-        note "all present"
-    fi
-else
-    note "no apt here; make sure you have: $need (optional: $want)"
-fi
-
-# ── 2. binaries ─────────────────────────────────────────────────────────
-say "binaries → $PREFIX/bin"
-STAGE=$(mktemp -d)
-trap 'rm -rf "$STAGE"' EXIT
-if [ "$BUILD" = 1 ]; then
-    SRC=$DEST_HOME/src/chasm
-    mkdir -p "$SRC"
-    for r in $REPOS; do
-        if [ -d "$SRC/$r/.git" ]; then git -C "$SRC/$r" pull -q; else git clone -q "https://github.com/isene/$r" "$SRC/$r"; fi
-        note "building $r"
-        make -s -C "$SRC/$r" >/dev/null
+secure_dir(){
+    [ "$PREFIX" = /usr/local ] || return 0
+    local dir owner mode
+    for dir in "$@"; do
+        read -r owner mode < <(stat -Lc '%u %a' "$dir")
+        [ "$owner" = 0 ] && (( (8#$mode & 0022) == 0 )) || {
+            echo "chasm-install: unsafe owner or permissions on $dir" >&2; exit 1;
+        }
     done
-    "$HERE/chasm-release" --stage "$STAGE/chasm" --root "$SRC"
-else
-    if [ -n "$TARBALL" ]; then
-        note "using $TARBALL"
-    else
-        TARBALL=$STAGE/chasm-amd64.tar.gz
-        note "fetching $RELEASE_URL"
-        curl -fsSL -o "$TARBALL" "$RELEASE_URL"
+}
+ROOT=$PREFIX/lib/chasm
+RELEASES=$ROOT/releases
+CURRENT=$ROOT/current
+PREVIOUS=$ROOT/previous
+switch_link(){
+    local link=$1 target=$2 tmp=$ROOT/.link.$$
+    run_install ln -s "$target" "$tmp"
+    run_install mv -Tf "$tmp" "$link"
+}
+if (( ROLLBACK )); then
+    [ -L "$CURRENT" ] && [ -L "$PREVIOUS" ] || { echo 'chasm-install: no previous version' >&2; exit 1; }
+    old=$(readlink "$PREVIOUS")
+    now=$(readlink "$CURRENT")
+    [[ $old =~ ^releases/[A-Za-z0-9._-]+$ && $now =~ ^releases/[A-Za-z0-9._-]+$ ]] || {
+        echo 'chasm-install: invalid version links' >&2; exit 1;
+    }
+    [ -d "$ROOT/$old" ] || { echo "chasm-install: previous version missing: $old" >&2; exit 1; }
+    secure_dir "$PREFIX" "$PREFIX/lib" "$ROOT" "$RELEASES"
+    switch_link "$CURRENT" "$old"
+    switch_link "$PREVIOUS" "$now"
+    for f in "$PREFIX"/bin/* "$PREFIX"/share/chasm/xcursors "$PREFIX"/share/chasm/VERSIONS; do
+        [ -L "$f" ] && [ ! -e "$f" ] && run_install rm -f "$f"
+    done
+    for f in "$ROOT/$old"/bin/*; do
+        [ -f "$f" ] || continue
+        dst=$PREFIX/bin/${f##*/}
+        [ -e "$dst" ] || [ -L "$dst" ] || run_install ln -s "../lib/chasm/current/bin/${f##*/}" "$dst"
+    done
+    for name in xcursors VERSIONS; do
+        case $name in xcursors) source=$ROOT/$old/share/xcursors; target=../../lib/chasm/current/share/xcursors ;;
+            VERSIONS) source=$ROOT/$old/VERSIONS; target=../../lib/chasm/current/VERSIONS ;;
+        esac
+        dst=$PREFIX/share/chasm/$name
+        [ ! -e "$source" ] || [ -e "$dst" ] || [ -L "$dst" ] || run_install ln -s "$target" "$dst"
+    done
+    if [ "$PREFIX" = /usr/local ]; then
+        service=/etc/systemd/system/bolt-greet.service
+        [ -L "$service" ] && [ ! -e "$service" ] && run_install rm -f "$service"
+        [ ! -f "$ROOT/$old/lib/systemd/bolt-greet.service" ] || [ -e "$service" ] || [ -L "$service" ] || \
+            run_install ln -s "$ROOT/current/lib/systemd/bolt-greet.service" "$service"
+        run_install systemctl daemon-reload
     fi
-    tar -xzf "$TARBALL" -C "$STAGE"
-fi
-BIN=$STAGE/chasm/bin
-[ -x "$BIN/frame" ] || { echo "chasm-install: no binaries found in $STAGE" >&2; exit 1; }
-for b in "$BIN"/*; do
-    n=$(basename "$b")
-    case $n in
-        bolt-auth) inst 4755 "$b" "$PREFIX/bin/$n" ;;   # suid root: reads shadow for bolt
-        *)         inst 0755 "$b" "$PREFIX/bin/$n" ;;
-    esac
-done
-note "$(ls "$BIN" | wc -l) programs installed"
-for f in "$STAGE"/chasm/share/xcursors/default/index.theme "$STAGE"/chasm/share/xcursors/default/cursors/*; do
-    inst 0644 "$f" "$PREFIX/share/chasm/xcursors/default/${f#*/xcursors/default/}"
-done
-if [ -f "$STAGE/chasm/lib/systemd/bolt-greet.service" ] && [ "$PREFIX" = /usr/local ]; then
-    inst 0644 "$STAGE/chasm/lib/systemd/bolt-greet.service" /etc/systemd/system/bolt-greet.service
-fi
-if [ -f "$STAGE/chasm/VERSIONS" ]; then
-    inst 0644 "$STAGE/chasm/VERSIONS" "$PREFIX/share/chasm/VERSIONS"
-    note "versions: $(tr '\n' ' ' < "$STAGE/chasm/VERSIONS")"
+    say "rolled back to ${old#releases/}"
+    exit 0
 fi
 
-# ── 3. configs (kept if you already have one) ───────────────────────────
-say "configs → $DEST_HOME"
-for rc in tilerc striprc glassrc barerc framerc; do
-    if [ -e "$DEST_HOME/.$rc" ]; then note "~/.$rc kept (yours)"
-    else install -m644 "$HERE/config/$rc" "$DEST_HOME/.$rc"; note "~/.$rc installed"; fi
-done
-mkdir -p "$DEST_HOME/.bare/plugins"
-for p in "$STAGE"/chasm/share/bare/plugins/*; do
-    [ -e "$p" ] && install -m755 "$p" "$DEST_HOME/.bare/plugins/$(basename "$p")"
-done
+STAGE=$(mktemp -d)
+MIGRATING=0
+MOVED=()
+BACKUPS=()
+LINKED=()
+cleanup(){
+    if (( MIGRATING )); then
+        for dst in "${LINKED[@]}"; do run_install rm -f "$dst"; done
+        for i in "${!MOVED[@]}"; do
+            run_install mv "${BACKUPS[$i]}" "${MOVED[$i]}"
+        done
+    fi
+    if [ -n "${REL_TMP:-}" ] && [ -d "$REL_TMP" ]; then run_install rm -rf "$REL_TMP"; fi
+    rm -rf "$STAGE"
+}
+trap cleanup EXIT
 
-# ── 4. wallpapers ───────────────────────────────────────────────────────
-say "wallpapers → $DEST_HOME/.local/share/chasm/wallpapers"
-WP=$DEST_HOME/.local/share/chasm/wallpapers
-mkdir -p "$WP" "$DEST_HOME/.cache/chasm"
-for w in "$HERE"/wallpapers/*.png; do install -m644 "$w" "$WP/$(basename "$w")"; done
-set -- "$WP"/*.png; first=$1
-printf '%s\n' "$first" > "$DEST_HOME/.cache/chasm/wallpaper-current"
-if command -v convert >/dev/null; then
-    HOME=$DEST_HOME "$PREFIX/bin/chasm-bg" "$first" 2>&1 | sed 's/^/   /' || note "wallpaper bake failed; Mod4+w retries later"
+if (( BUILD )); then
+    say 'building locked sources'
+    if [ "$PREFIX" = /usr/local ] && command -v apt-get >/dev/null; then
+        missing=""
+        for p in nasm binutils gcc libcrypt-dev git make; do dpkg -s "$p" >/dev/null 2>&1 || missing="$missing $p"; done
+        [ -z "$missing" ] || run_install apt-get install -y $missing
+    fi
+    mkdir -p "$STAGE/src"
+    while read -r repo sha extra; do
+        [[ -z $repo || $repo == \#* ]] && continue
+        git clone -q "https://github.com/isene/$repo.git" "$STAGE/src/$repo"
+        git -C "$STAGE/src/$repo" checkout -q "$sha"
+    done < "$HERE/sources.lock"
+    "$HERE/chasm-release" --stage "$STAGE/chasm" --root "$STAGE/src"
+    tar -czf "$STAGE/chasm-amd64.tar.gz" -C "$STAGE" chasm
+    TARBALL=$STAGE/chasm-amd64.tar.gz
+    sha256sum "$TARBALL" > "$TARBALL.sha256"
 else
-    note "ImageMagick missing: wallpaper not baked yet; Mod4+w does it once convert exists"
+    if [ -z "$TARBALL" ]; then
+        base=https://github.com/isene/chasm/releases
+        if [ -n "$VERSION" ]; then base=$base/download/$VERSION; else base=$base/latest/download; fi
+        TARBALL=$STAGE/chasm-amd64.tar.gz
+        say "fetching $base"
+        curl -fsSL -o "$TARBALL" "$base/chasm-amd64.tar.gz"
+        curl -fsSL -o "$TARBALL.sha256" "$base/chasm-amd64.tar.gz.sha256"
+    fi
 fi
 
-# ── 5. session entry for the display manager ────────────────────────────
+[ -r "$TARBALL.sha256" ] || { echo "chasm-install: missing $TARBALL.sha256" >&2; exit 1; }
+read -r expected _ < "$TARBALL.sha256"
+[[ $expected =~ ^[0-9a-fA-F]{64}$ ]] || { echo 'chasm-install: invalid checksum' >&2; exit 1; }
+actual=$(sha256sum "$TARBALL")
+actual=${actual%% *}
+[ "${actual,,}" = "${expected,,}" ] || { echo 'chasm-install: checksum mismatch' >&2; exit 1; }
+say 'archive verified'
+
+# GNU tar escapes unusual names; allow only simple paths below chasm/ and
+# regular files/directories. Do this before extraction, even for local files.
+names=$(tar -tzf "$TARBALL" --quoting-style=escape)
+while IFS= read -r name; do
+    [[ $name =~ ^chasm(/[A-Za-z0-9._-]+)*/?$ && $name != *'/../'* && $name != *'/./'* && $name != */.. && $name != */. ]] || {
+        echo "chasm-install: unsafe archive path: $name" >&2; exit 1;
+    }
+done <<< "$names"
+types=$(tar -tvzf "$TARBALL" --quoting-style=escape | cut -c1 | sort -u)
+while IFS= read -r type; do
+    [[ $type == d || $type == - ]] || { echo 'chasm-install: archive contains links or special files' >&2; exit 1; }
+done <<< "$types"
+tar -xzf "$TARBALL" --no-same-owner --no-same-permissions -C "$STAGE"
+TREE=$STAGE/chasm
+for f in frame tile tile-strip glass bare show bolt bolt-auth spot chasm-session chasm-keys chasm-wp chasm-bg bits-cpu; do
+    [ -x "$TREE/bin/$f" ] || { echo "chasm-install: missing executable $f" >&2; exit 1; }
+done
+[ -f "$TREE/VERSIONS" ] && [ -f "$TREE/share/xcursors/default/cursors/hand" ] \
+    && [ -f "$TREE/lib/systemd/bolt-greet.service" ] || {
+    echo 'chasm-install: incomplete bundle' >&2; exit 1;
+}
+
+# The digest identifies the installed artifact. Existing releases are never
+# rewritten, so a failed upgrade leaves the running version untouched.
+ID=$actual
+REL=$RELEASES/$ID
+run_install install -d -m755 "$RELEASES"
+secure_dir "$PREFIX" "$PREFIX/lib" "$ROOT" "$RELEASES"
+if [ ! -d "$REL" ]; then
+    REL_TMP=$RELEASES/.stage-$ID-$$
+    run_install install -d -m755 "$REL_TMP"
+    while IFS= read -r -d '' dir; do
+        run_install install -d -m755 "$REL_TMP/${dir#"$TREE"/}"
+    done < <(find "$TREE" -mindepth 1 -type d -print0)
+    while IFS= read -r -d '' file; do
+        rel=${file#"$TREE"/}
+        mode=0644
+        case $rel in bin/*) mode=0755 ;; esac
+        [ "$rel" != bin/bolt-auth ] || { [ "$PREFIX" != /usr/local ] || mode=4755; }
+        run_install install -m "$mode" "$file" "$REL_TMP/$rel"
+    done < <(find "$TREE" -type f -print0)
+    run_install mv -T "$REL_TMP" "$REL"
+else
+    [ -x "$REL/bin/frame" ] || { echo "chasm-install: incomplete installed release $ID" >&2; exit 1; }
+    secure_dir "$REL" "$REL/bin"
+fi
+
+# Prepare host and user files before changing the active binary version.
 if [ "$PREFIX" = /usr/local ]; then
-    say "session entry"
-    inst 0644 "$HERE/chasm.desktop" /usr/share/xsessions/chasm.desktop
-    note "\"CHasm\" now appears in the session menu of gdm, lightdm and sddm"
+    need='fonts-dejavu-core fonts-droid-fallback fonts-noto-color-emoji imagemagick x11-utils x11-xserver-utils'
+    want='rofi scrot'
+    if command -v apt-get >/dev/null; then
+        missing=""
+        for p in $need $want; do dpkg -s "$p" >/dev/null 2>&1 || missing="$missing $p"; done
+        [ -z "$missing" ] || run_install apt-get install -y $missing
+    else
+        note "install these packages manually: $need (optional: $want)"
+    fi
+    run_install install -m644 "$HERE/chasm.desktop" /usr/share/xsessions/chasm.desktop
 fi
 
-# ── 6. greeter (optional) ───────────────────────────────────────────────
+mkdir -p "$DEST_HOME"
+for rc in tilerc striprc glassrc barerc framerc; do
+    if [ ! -e "$DEST_HOME/.$rc" ]; then
+        if [ "$rc" = striprc ] && [ "$PREFIX" != /usr/local ]; then
+            sed "s#/usr/local/bin#$PREFIX/bin#g" "$HERE/config/$rc" > "$STAGE/$rc"
+            install -m644 "$STAGE/$rc" "$DEST_HOME/.$rc"
+        else
+            install -m644 "$HERE/config/$rc" "$DEST_HOME/.$rc"
+        fi
+    fi
+done
+mkdir -p "$DEST_HOME/.bare/plugins" "$DEST_HOME/.local/share/chasm/wallpapers" "$DEST_HOME/.cache/chasm"
+for p in "$TREE"/share/bare/plugins/*; do
+    [ -e "$p" ] || continue
+    [ -e "$DEST_HOME/.bare/plugins/${p##*/}" ] || install -m755 "$p" "$DEST_HOME/.bare/plugins/${p##*/}"
+done
+WP=$DEST_HOME/.local/share/chasm/wallpapers
+for w in "$HERE"/wallpapers/*.png; do
+    [ -e "$WP/${w##*/}" ] || install -m644 "$w" "$WP/${w##*/}"
+done
+NEW_WALLPAPER=0
+if [ ! -e "$DEST_HOME/.cache/chasm/wallpaper-current" ]; then
+    first=$WP/dragon.png
+    printf '%s\n' "$first" > "$DEST_HOME/.cache/chasm/wallpaper-current"
+    NEW_WALLPAPER=1
+fi
+
+# Create stable names once. Existing in-place installs move to a retained
+# legacy release, which --rollback can select after the first upgrade.
+run_install install -d -m755 "$PREFIX/bin" "$PREFIX/share/chasm" "$RELEASES"
+secure_dir "$PREFIX/bin" "$PREFIX/share" "$PREFIX/share/chasm"
+LEGACY=$RELEASES/legacy-$(date -u +%Y%m%d-%H%M%S)-$$
+MIGRATING=1
+move_and_link(){
+    local dst=$1 target=$2 rel=$3
+    if [ -L "$dst" ] && [ "$(readlink "$dst")" = "$target" ]; then return; fi
+    if [ -e "$dst" ] || [ -L "$dst" ]; then
+        run_install install -d -m755 "$(dirname "$LEGACY/$rel")"
+        run_install mv "$dst" "$LEGACY/$rel"
+        MOVED+=("$dst")
+        BACKUPS+=("$LEGACY/$rel")
+    fi
+    run_install ln -s "$target" "$dst"
+    LINKED+=("$dst")
+}
+for f in "$TREE"/bin/*; do
+    name=${f##*/}
+    move_and_link "$PREFIX/bin/$name" "../lib/chasm/current/bin/$name" "bin/$name"
+done
+move_and_link "$PREFIX/share/chasm/xcursors" '../../lib/chasm/current/share/xcursors' 'share/xcursors'
+move_and_link "$PREFIX/share/chasm/VERSIONS" '../../lib/chasm/current/VERSIONS' 'VERSIONS'
+if [ "$PREFIX" = /usr/local ]; then
+    secure_dir /etc /etc/systemd /etc/systemd/system
+    move_and_link /etc/systemd/system/bolt-greet.service \
+        "$ROOT/current/lib/systemd/bolt-greet.service" 'lib/systemd/bolt-greet.service'
+fi
+
+if [ -L "$CURRENT" ]; then
+    old=$(readlink "$CURRENT")
+elif (( ${#MOVED[@]} )); then
+    old=releases/${LEGACY##*/}
+else
+    old=""
+fi
+[ -z "$old" ] || switch_link "$PREVIOUS" "$old"
+switch_link "$CURRENT" "releases/$ID"
+MIGRATING=0
+say "active bundle: $ID"
+if [ "$PREFIX" = /usr/local ]; then run_install systemctl daemon-reload; fi
+if (( NEW_WALLPAPER )); then
+    command -v convert >/dev/null && HOME=$DEST_HOME "$PREFIX/bin/chasm-bg" "$first" || true
+fi
+
 if [ "$PREFIX" = /usr/local ] && [ "$GREETER" != no ]; then
     if [ "$GREETER" = ask ] && [ -t 0 ]; then
-        printf '\nMake bolt-greet the login screen (replaces gdm/lightdm/sddm)? [y/N] '
-        read -r a; case $a in [yY]*) GREETER=yes ;; *) GREETER=no ;; esac
+        printf 'Make bolt-greet the login screen (replaces gdm/lightdm/sddm)? [y/N] '
+        read -r answer
+        case $answer in [yY]*) GREETER=yes ;; *) GREETER=no ;; esac
     fi
     if [ "$GREETER" = yes ]; then
-        say "greeter"
-        me=${SUDO_USER:-$USER}
-        sed "s/^GREET_USER=.*/GREET_USER=$me/" "$PREFIX/bin/bolt-greet-auth.example" > "$STAGE/auth"
-        inst 0755 "$STAGE/auth" "$PREFIX/bin/bolt-greet-auth"
+        user=${SUDO_USER:-$USER}
+        sed "s/^GREET_USER=.*/GREET_USER=$user/" "$PREFIX/bin/bolt-greet-auth.example" > "$STAGE/auth"
+        run_install install -m755 "$STAGE/auth" "$PREFIX/bin/bolt-greet-auth"
         for dm in gdm3 gdm lightdm sddm; do
-            if systemctl is-enabled --quiet "$dm" 2>/dev/null; then sudo systemctl disable "$dm"; note "$dm disabled"; fi
+            if systemctl is-enabled --quiet "$dm" 2>/dev/null; then sudo systemctl disable "$dm"; fi
         done
-        sudo systemctl enable bolt-greet >/dev/null
-        sudo loginctl enable-linger "$me" 2>/dev/null || true
-        note "bolt-greet enabled for $me; takes effect at next boot"
-        note "undo: sudo systemctl disable bolt-greet && sudo systemctl enable gdm3"
+        sudo systemctl enable bolt-greet
+        sudo loginctl enable-linger "$user" 2>/dev/null || true
     fi
 fi
-
-# ── done ────────────────────────────────────────────────────────────────
-say "done"
-cat <<EOF
-   Start it, pick one:
-     • log out and choose "CHasm" at your login screen (tile on Xorg)
-     • from a text console (Ctrl+Alt+F3), with the login screen stopped
-       (sudo systemctl stop gdm3, or lightdm, sddm):  sudo chasm-session
-       frame, the assembly X server, then drives the screen. Ctrl+Alt+Backspace quits.
-     • reboot into the greeter, if you said yes above
-
-   Inside: Mod4+Return opens a terminal, Mod4+? shows every key, Mod4+w cycles wallpapers.
-EOF
+say 'done: log out and choose CHasm, or run sudo chasm-session from a text console'

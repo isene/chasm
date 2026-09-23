@@ -1,15 +1,5 @@
 #!/bin/bash
-# chasm-release: build every CHasm repo and publish one tarball.
-#
-#   chasm-release                    build, stage, tar, publish as the latest
-#                                    GitHub release of isene/chasm
-#   chasm-release --stage DIR        build and stage into DIR, publish nothing
-#                                    (chasm-install --build uses this)
-#   --root DIR                       where the sibling repos live
-#                                    (default: the directory above this one)
-#
-# The tarball unpacks to chasm/ with bin/, lib/systemd/, share/ and a
-# VERSIONS file. chasm-install knows that layout.
+# Build the locked core desktop. --stage DIR prepares a bundle without publishing.
 set -euo pipefail
 
 HERE=$(cd "$(dirname "$0")" && pwd)
@@ -17,26 +7,54 @@ ROOT=$(dirname "$HERE")
 STAGE=""
 while [ $# -gt 0 ]; do
     case $1 in
-        --stage) STAGE=$2; shift ;;
-        --root)  ROOT=$2; shift ;;
+        --stage|--root)
+            [ $# -ge 2 ] || { echo "chasm-release: $1 needs a directory" >&2; exit 2; }
+            if [ "$1" = --stage ]; then STAGE=$2; else ROOT=$2; fi
+            shift 2 ;;
         *) echo "chasm-release: unknown option $1" >&2; exit 2 ;;
     esac
-    shift
 done
 
-REPOS="frame tile glass bare show chasm-bits bolt spot"
+REPOS=(frame tile glass bare show chasm-bits bolt spot)
+SOURCES=("${REPOS[@]}" glyph)
+declare -A LOCK
+while read -r repo sha extra; do
+    [[ -z $repo || $repo == \#* ]] && continue
+    [[ $sha =~ ^[0-9a-f]{40}$ && -z ${extra:-} && -z ${LOCK[$repo]+x} ]] || {
+        echo "chasm-release: invalid sources.lock entry: $repo" >&2; exit 1;
+    }
+    LOCK[$repo]=$sha
+done < "$HERE/sources.lock"
+[ "${#LOCK[@]}" -eq "${#SOURCES[@]}" ] || { echo "chasm-release: incomplete sources.lock" >&2; exit 1; }
+for repo in "${SOURCES[@]}"; do
+    [ -n "${LOCK[$repo]:-}" ] || { echo "chasm-release: missing $repo pin" >&2; exit 1; }
+done
+
 PUBLISH=0
 if [ -z "$STAGE" ]; then
-    TMP=$(mktemp -d); trap 'rm -rf "$TMP"' EXIT
-    STAGE=$TMP/chasm; PUBLISH=1
+    TMP=$(mktemp -d)
+    trap 'rm -rf "$TMP"' EXIT
+    STAGE=$TMP/chasm
+    PUBLISH=1
 fi
-mkdir -p "$STAGE/bin" "$STAGE/lib/systemd" "$STAGE/share/bare/plugins" "$STAGE/share/xcursors"
+[ ! -e "$STAGE" ] || [ -z "$(ls -A "$STAGE")" ] || {
+    echo "chasm-release: stage directory is not empty: $STAGE" >&2; exit 1;
+}
 
-for r in $REPOS; do
-    [ -d "$ROOT/$r" ] || { echo "chasm-release: missing repo $ROOT/$r" >&2; exit 1; }
-    make -s -C "$ROOT/$r" >/dev/null
+for repo in "${SOURCES[@]}"; do
+    src=$ROOT/$repo
+    [ -d "$src/.git" ] || { echo "chasm-release: missing checkout $src" >&2; exit 1; }
+    [ "$(git -C "$src" rev-parse HEAD)" = "${LOCK[$repo]}" ] || {
+        echo "chasm-release: $repo is not at its locked commit" >&2; exit 1;
+    }
+    [ -z "$(git -C "$src" status --porcelain)" ] || {
+        echo "chasm-release: $repo checkout is dirty" >&2; exit 1;
+    }
 done
 
+mkdir -p "$STAGE/bin" "$STAGE/lib/systemd" "$STAGE/share/bare/plugins" \
+    "$STAGE/share/xcursors/default/cursors"
+for repo in "${REPOS[@]}"; do make -s -C "$ROOT/$repo" >/dev/null; done
 put(){ install -m755 "$1" "$STAGE/bin/$2"; }
 put "$ROOT/frame/frame"            frame
 put "$ROOT/tile/tile"              tile
@@ -53,7 +71,9 @@ put "$ROOT/bolt/greet-session"     greet-session
 put "$ROOT/bolt/bolt-greet-run"    bolt-greet-run
 put "$ROOT/bolt/bolt-greet-auth.example" bolt-greet-auth.example
 put "$ROOT/bolt/chasm-bg"          chasm-bg
-for p in $(sed -n 's/^PROGRAMS *= *//p' "$ROOT/chasm-bits/Makefile"); do
+programs=$(sed -n 's/^PROGRAMS *= *//p' "$ROOT/chasm-bits/Makefile")
+[ -n "$programs" ] || { echo 'chasm-release: no chasm-bits programs found' >&2; exit 1; }
+for p in $programs; do
     put "$ROOT/chasm-bits/$p" "bits-$p"
 done
 put "$HERE/chasm-keys"     chasm-keys
@@ -61,25 +81,30 @@ put "$HERE/chasm-session"  chasm-session
 put "$HERE/chasm-wp"       chasm-wp
 install -m644 "$ROOT/bolt/bolt-greet.service" "$STAGE/lib/systemd/"
 install -m755 "$ROOT/bare/plugins/ask" "$ROOT/bare/plugins/suggest" "$STAGE/share/bare/plugins/"
-cp -r "$ROOT/frame/test/xcursors/." "$STAGE/share/xcursors/"
+install -m644 "$HERE/assets/xcursors/default/index.theme" "$STAGE/share/xcursors/default/index.theme"
+base64 -d "$HERE/assets/xcursors/default/cursors/hand.b64" > "$STAGE/share/xcursors/default/cursors/hand"
+chmod 644 "$STAGE/share/xcursors/default/cursors/hand"
 
-: > "$STAGE/VERSIONS"
-for r in $REPOS; do
-    v=$(grep -o 'version-[0-9.]*' "$ROOT/$r/README.md" | head -1)
-    printf '%s %s\n' "$r" "${v#version-}" >> "$STAGE/VERSIONS"
-done
-printf 'built %s\n' "$(date -u +%Y-%m-%dT%H:%MZ)" >> "$STAGE/VERSIONS"
-
-echo "staged $(ls "$STAGE/bin" | wc -l) programs in $STAGE"
+for repo in "${SOURCES[@]}"; do printf '%s %s\n' "$repo" "${LOCK[$repo]}"; done > "$STAGE/VERSIONS"
+printf 'nasm %s\nld %s\ngcc %s\n' \
+    "$(nasm -v)" "$(ld -v)" "$(gcc -dumpfullversion)" >> "$STAGE/VERSIONS"
+echo "staged $(find "$STAGE/bin" -type f | wc -l) programs in $STAGE"
 [ "$PUBLISH" = 1 ] || exit 0
 
-TAR=$TMP/chasm-amd64.tar.gz
-tar -czf "$TAR" -C "$TMP" chasm
-TAG=r$(date +%Y%m%d)
+[ -z "$(git -C "$HERE" status --porcelain)" ] || {
+    echo "chasm-release: commit umbrella changes before publishing" >&2; exit 1;
+}
+HEAD=$(git -C "$HERE" rev-parse HEAD)
+[ "$HEAD" = "$(git -C "$HERE" ls-remote origin refs/heads/master | cut -f1)" ] || {
+    echo "chasm-release: push master before publishing" >&2; exit 1;
+}
+TAG=r$(date -u +%Y%m%d-%H%M%S)
 if gh release view "$TAG" -R isene/chasm >/dev/null 2>&1; then
-    gh release upload "$TAG" "$TAR" -R isene/chasm --clobber
-else
-    gh release create "$TAG" "$TAR" -R isene/chasm --latest \
-        --title "CHasm $TAG" --notes "$(printf 'Prebuilt static amd64 binaries for chasm-install.\n\n```\n%s\n```' "$(cat "$STAGE/VERSIONS")")"
+    echo "chasm-release: release $TAG already exists" >&2; exit 1
 fi
-echo "published $TAG ($(du -h "$TAR" | cut -f1))"
+tar --sort=name --mtime='@0' --owner=0 --group=0 --numeric-owner -czf "$TMP/chasm-amd64.tar.gz" -C "$TMP" chasm
+(cd "$TMP" && sha256sum chasm-amd64.tar.gz > chasm-amd64.tar.gz.sha256)
+gh release create "$TAG" "$TMP/chasm-amd64.tar.gz" "$TMP/chasm-amd64.tar.gz.sha256" \
+    -R isene/chasm --target "$HEAD" --latest --title "CHasm $TAG" \
+    --notes "Locked core desktop binaries. Source commits and tool versions are in VERSIONS."
+echo "published $TAG"

@@ -1,0 +1,34 @@
+name: Check
+on:
+  push:
+  pull_request:
+
+jobs:
+  installer:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash -n chasm-install chasm-release chasm-session chasm-keys chasm-wp
+      - run: bash tests/install.sh
+
+  bundle:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y nasm binutils gcc libcrypt-dev make
+      - name: Check locked bundle from clean sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/src"
+          while read -r repo sha extra; do
+            [[ -z $repo || $repo == \#* ]] && continue
+            git clone --quiet "https://github.com/isene/$repo.git" "$RUNNER_TEMP/src/$repo"
+            git -C "$RUNNER_TEMP/src/$repo" checkout --quiet "$sha"
+          done < sources.lock
+          ./chasm-release --stage "$RUNNER_TEMP/chasm" --root "$RUNNER_TEMP/src"
+          for bin in frame tile glass bare show bolt spot; do
+            test -x "$RUNNER_TEMP/chasm/bin/$bin"
+            headers=$(readelf -l "$RUNNER_TEMP/chasm/bin/$bin")
+            [[ $headers != *INTERP* ]]
+          done

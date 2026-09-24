@@ -55,7 +55,9 @@ exec_desc() {
         *bolt*)                   printf 'lock the screen' ;;
         *scrot*)                  printf 'screenshot' ;;
         *chasm-wp*|*wp-cycle*)    printf 'next wallpaper' ;;
-        *rofi*)                   printf 'launcher' ;;
+        # rofi as a whole word: *rofi* also hit power-p"rofi"le-toggle
+        rofi|rofi[[:space:]]*|*[[:space:]/\'\"]rofi|*[[:space:]/\'\"]rofi[[:space:]\'\"]*)
+                                  printf 'launcher' ;;
         *set-mute*toggle*)        printf 'mute toggle' ;;
         *set-mute*\ 1)            printf 'mute' ;;
         *set-mute*\ 0)            printf 'unmute' ;;
@@ -116,6 +118,23 @@ act_desc() {
 
 # ── tile + spot + utility rows: live from ~/.tilerc ─────────────────────
 hdr "TILE + SPOT + UTILITY ROWS   ${D}(live from ~/.tilerc)${R}"
+
+# Number runs fold into one row: Mod4+1 .. Mod4+0 bound to workspace
+# 1 .. 10 print as "Mod4+1..0  go to workspace 1-10". A run is binds in a
+# row with the same modifiers, a digit key, the same action (workspace or
+# move-to) on consecutive numbers, and no comment of their own.
+run_n=0
+flush_run() {
+    (( run_n )) || return 0
+    if (( run_n == 1 )); then
+        row "$run_combo" "$run_verb $run_a" "$(act_desc "$run_verb $run_a")"
+    else
+        row "$run_pre$run_k1..$run_k2" "$run_verb $run_a-$run_b" \
+            "$(act_desc "$run_verb $run_a-$run_b")"
+    fi
+    run_n=0
+}
+
 pend=""
 while IFS= read -r line; do
     case $line in
@@ -133,6 +152,25 @@ while IFS= read -r line; do
                 cmt=${act#*' #'}; cmt=${cmt#"${cmt%%[![:space:]]*}"}
                 act=${act%%' #'*}; act=${act%"${act##*[![:space:]]}"}
             fi
+            key=${combo##*+}; verb=${act%% *}; num=${act#"$verb "}
+            if [[ -z $cmt && $key == [0-9] && ( $verb == workspace || $verb == move-to )
+                  && -n $num && $num != *[!0-9]* ]]; then
+                pre=${combo%"$key"}; num=$((10#$num))
+                if (( run_n )) && [[ -z $pend && $pre == "$run_pre" && $verb == "$run_verb" ]] \
+                   && (( num == run_b + 1 )); then
+                    run_b=$num; run_k2=$key; (( run_n++ ))
+                    continue
+                fi
+                flush_run
+                if [[ -n $pend ]]; then
+                    sub "$pend"
+                    pend=""
+                fi
+                run_pre=$pre; run_verb=$verb; run_a=$num; run_b=$num
+                run_k1=$key; run_k2=$key; run_combo=$combo; run_n=1
+                continue
+            fi
+            flush_run
             if [[ -n $pend ]]; then
                 sub "$pend"
                 pend=""
@@ -141,6 +179,7 @@ while IFS= read -r line; do
             ;;
     esac
 done < "$HOME/.tilerc"
+flush_run
 
 # ── frame: server-level keys ────────────────────────────────────────────
 hdr "FRAME   ${D}(server-level, swallowed before clients)${R}"

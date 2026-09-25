@@ -2,6 +2,8 @@
 # `segment NAME [+N] [#RRGGBB] COMMAND [INTERVAL_S]`
 # The asmites (bits-*) are tiny static binaries from chasm-bits. Absolute
 # paths let strip exec them without a shell.
+# A command that prints nothing leaves its last text on the bar (a failed
+# run does not blank it). To clear a marker, print a space.
 
 height     = 22
 top_offset = 0

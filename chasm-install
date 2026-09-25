@@ -5,6 +5,7 @@
 #   ./chasm-install --build      build every repo from source instead
 #   ./chasm-install --greeter    also make bolt-greet the login screen
 #   ./chasm-install --no-greeter never ask about the login screen
+#   ./chasm-install --rollback   put back the binaries the last install replaced
 #
 # What it does, in order: install the few packages the suite leans on
 # (fonts, ImageMagick for emoji and wallpapers), put the binaries in
@@ -21,6 +22,7 @@ PREFIX=/usr/local
 DEST_HOME=$HOME
 BUILD=0
 GREETER=ask
+ROLLBACK=0
 TARBALL=""
 RELEASE_URL="https://github.com/isene/chasm/releases/latest/download/chasm-amd64.tar.gz"
 REPOS="frame tile glass bare show chasm-bits bolt spot"
@@ -30,10 +32,11 @@ while [ $# -gt 0 ]; do
         --build)      BUILD=1 ;;
         --greeter)    GREETER=yes ;;
         --no-greeter) GREETER=no ;;
+        --rollback)   ROLLBACK=1 ;;
         --prefix)     PREFIX=$2; shift ;;
         --home)       DEST_HOME=$2; shift ;;
         --tarball)    TARBALL=$2; shift ;;
-        -h|--help)    sed -n '2,16p' "$0"; exit 0 ;;
+        -h|--help)    sed -n '2,17p' "$0"; exit 0 ;;
         *) echo "chasm-install: unknown option $1" >&2; exit 2 ;;
     esac
     shift
@@ -52,6 +55,22 @@ as_root(){
 inst(){ # inst MODE SRC DST
     as_root "$3" install -Dm"$1" "$2" "$3"
 }
+put_bin(){ # put_bin SRC DIR
+    local n; n=$(basename "$1")
+    case $n in
+        bolt-auth) inst 4755 "$1" "$2/$n" ;;   # suid root: reads shadow for bolt
+        *)         inst 0755 "$1" "$2/$n" ;;
+    esac
+}
+PREV=$PREFIX/lib/chasm/previous              # what the last install replaced
+
+if [ "$ROLLBACK" = 1 ]; then
+    [ -d "$PREV/bin" ] || { echo "chasm-install: nothing to roll back to" >&2; exit 1; }
+    for b in "$PREV"/bin/*; do put_bin "$b" "$PREFIX/bin"; done
+    [ -f "$PREV/VERSIONS" ] && inst 0644 "$PREV/VERSIONS" "$PREFIX/share/chasm/VERSIONS"
+    echo "chasm-install: rolled back $(ls "$PREV/bin" | wc -l) programs; configs untouched"
+    exit 0
+fi
 
 # ── 1. packages ─────────────────────────────────────────────────────────
 say "packages"
@@ -91,18 +110,30 @@ else
         TARBALL=$STAGE/chasm-amd64.tar.gz
         note "fetching $RELEASE_URL"
         curl -fsSL -o "$TARBALL" "$RELEASE_URL"
+        curl -fsSL -o "$TARBALL.sha256" "$RELEASE_URL.sha256"
+    fi
+    if [ -f "$TARBALL.sha256" ]; then
+        read -r want _ < "$TARBALL.sha256"
+        read -r have _ < <(sha256sum "$TARBALL")
+        [ "$want" = "$have" ] || { echo "chasm-install: checksum mismatch, nothing installed" >&2; exit 1; }
+        note "checksum ok"
+    else
+        note "no $TARBALL.sha256 beside it; not checked"
     fi
     tar -xzf "$TARBALL" -C "$STAGE"
 fi
 BIN=$STAGE/chasm/bin
 [ -x "$BIN/frame" ] || { echo "chasm-install: no binaries found in $STAGE" >&2; exit 1; }
-for b in "$BIN"/*; do
-    n=$(basename "$b")
-    case $n in
-        bolt-auth) inst 4755 "$b" "$PREFIX/bin/$n" ;;   # suid root: reads shadow for bolt
-        *)         inst 0755 "$b" "$PREFIX/bin/$n" ;;
-    esac
-done
+# Save the installed suite first, unless it is this same build (a re-run).
+if [ -x "$PREFIX/bin/frame" ] && ! cmp -s "$STAGE/chasm/VERSIONS" "$PREFIX/share/chasm/VERSIONS"; then
+    as_root "$PREV" rm -rf "$PREV"
+    for b in "$BIN"/*; do
+        [ -f "$PREFIX/bin/$(basename "$b")" ] && put_bin "$PREFIX/bin/$(basename "$b")" "$PREV/bin"
+    done
+    [ -f "$PREFIX/share/chasm/VERSIONS" ] && inst 0644 "$PREFIX/share/chasm/VERSIONS" "$PREV/VERSIONS"
+    note "old binaries kept; --rollback puts them back"
+fi
+for b in "$BIN"/*; do put_bin "$b" "$PREFIX/bin"; done
 note "$(ls "$BIN" | wc -l) programs installed"
 for f in "$STAGE"/chasm/share/xcursors/default/index.theme "$STAGE"/chasm/share/xcursors/default/cursors/*; do
     inst 0644 "$f" "$PREFIX/share/chasm/xcursors/default/${f#*/xcursors/default/}"

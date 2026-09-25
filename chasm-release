@@ -9,7 +9,8 @@
 #                                    (default: the directory above this one)
 #
 # The tarball unpacks to chasm/ with bin/, lib/systemd/, share/ and a
-# VERSIONS file. chasm-install knows that layout.
+# VERSIONS file. chasm-install knows that layout. A .sha256 file ships
+# beside it.
 set -euo pipefail
 
 HERE=$(cd "$(dirname "$0")" && pwd)
@@ -75,11 +76,12 @@ echo "staged $(ls "$STAGE/bin" | wc -l) programs in $STAGE"
 
 TAR=$TMP/chasm-amd64.tar.gz
 tar -czf "$TAR" -C "$TMP" chasm
+(cd "$TMP" && sha256sum chasm-amd64.tar.gz > chasm-amd64.tar.gz.sha256)   # chasm-install checks it
 TAG=r$(date +%Y%m%d)
 if gh release view "$TAG" -R isene/chasm >/dev/null 2>&1; then
-    gh release upload "$TAG" "$TAR" -R isene/chasm --clobber
+    gh release upload "$TAG" "$TAR" "$TAR.sha256" -R isene/chasm --clobber
 else
-    gh release create "$TAG" "$TAR" -R isene/chasm --latest \
+    gh release create "$TAG" "$TAR" "$TAR.sha256" -R isene/chasm --latest \
         --title "CHasm $TAG" --notes "$(printf 'Prebuilt static amd64 binaries for chasm-install.\n\n```\n%s\n```' "$(cat "$STAGE/VERSIONS")")"
 fi
 echo "published $TAG ($(du -h "$TAR" | cut -f1))"

@@ -80,9 +80,11 @@ cd chasm
 
 `chasm-install` fetches the prebuilt static binaries from the
 [latest release](https://github.com/isene/chasm/releases/latest) into
-`/usr/local/bin`. The whole suite is a 300 KB download. It installs the
-few fonts the suite reads and drops default config files into your home
-(yours are kept if you have them).
+`/usr/local/bin`. The whole suite is a 300 KB download, checked against
+the release's SHA-256 sum before anything is installed. An update keeps
+the binaries it replaced, and `./chasm-install --rollback` puts them back.
+It installs the few fonts the suite reads and drops default config files
+into your home (yours are kept if you have them).
 
 It adds five wallpapers, bakes the first, and puts a **CHasm** entry in
 your login screen's session list. It asks one question: whether to make

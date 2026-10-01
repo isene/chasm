@@ -1,0 +1,43 @@
+name: Install test
+
+# A clean machine, one user who can sudo, then the three lines from the
+# README. test/install-check.sh starts what got installed.
+
+on:
+  push:
+    paths:
+      - chasm-install
+      - chasm.desktop
+      - config/**
+      - test/install-check.sh
+      - .github/workflows/install-test.yml
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ["ubuntu:24.04", "ubuntu:26.04", "debian:13", "archlinux:latest"]
+    container: ${{ matrix.image }}
+    steps:
+      - name: A clean machine with one user who can sudo
+        run: |
+          if command -v apt-get >/dev/null; then
+            apt-get update
+            apt-get install -y sudo git curl ca-certificates
+          else
+            pacman -Sy --noconfirm sudo git curl
+          fi
+          useradd -m tester
+          echo 'tester ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/tester
+      - name: Install as the README says, then check
+        run: |
+          sudo -iu tester bash -c '
+            git clone -q https://github.com/isene/chasm &&
+            cd chasm &&
+            git checkout -q ${{ github.sha }} &&
+            test/install-check.sh'

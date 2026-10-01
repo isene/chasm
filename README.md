@@ -97,8 +97,10 @@ screen stopped, run `sudo chasm-session` to get the whole thing on
 `Mod4+Return` opens a glass, `Mod4+?` shows every key, `Mod4+w` cycles
 wallpapers, `Mod4+Escape` locks.
 
-Debian, Ubuntu and Mint get their packages through `apt`; on other
-distros install DejaVu fonts and ImageMagick yourself first.
+Debian, Ubuntu and Mint get their packages through `apt`, Arch through
+`pacman`; on other distros install DejaVu fonts and ImageMagick yourself
+first. Every change to the installer is tried on clean Ubuntu, Debian
+and Arch machines by `test/install-check.sh`.
 `./chasm-install --build` builds everything from source instead of
 downloading (needs nasm, ld, gcc). `./chasm-install --help` lists the
 rest.

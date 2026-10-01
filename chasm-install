@@ -46,11 +46,11 @@ say(){ printf '\n\033[1m== %s\033[0m\n' "$*"; }
 note(){ printf '   %s\n' "$*"; }
 
 # Root only where the target needs it. A --prefix under $HOME stays yours.
+root(){ if [ "$(id -u)" -eq 0 ]; then "$@"; else sudo "$@"; fi; }
 as_root(){
     local d; d=$(dirname "$1")
     while [ ! -e "$d" ]; do d=$(dirname "$d"); done
-    if [ -w "$d" ] || [ "$(id -u)" -eq 0 ]; then "${@:2}"
-    else sudo "${@:2}"; fi
+    if [ -w "$d" ]; then "${@:2}"; else root "${@:2}"; fi
 }
 inst(){ # inst MODE SRC DST
     as_root "$3" install -Dm"$1" "$2" "$3"
@@ -76,18 +76,30 @@ fi
 say "packages"
 need="fonts-dejavu-core fonts-droid-fallback fonts-noto-color-emoji imagemagick x11-utils x11-xserver-utils"
 want="rofi scrot"
-[ "$BUILD" = 1 ] && need="$need nasm binutils gcc git make"
+build="nasm binutils gcc git make"
 if command -v apt-get >/dev/null; then
+    have(){ dpkg -s "$1" >/dev/null 2>&1; }
+    add="apt-get install -y"
+elif command -v pacman >/dev/null; then
+    # The same things under Arch's names. libxcrypt-compat is for bolt-auth.
+    need="ttf-dejavu ttf-droid noto-fonts-emoji imagemagick libxcrypt-compat xorg-xdpyinfo xorg-xwininfo xorg-xprop xorg-xrandr xorg-xset xorg-xsetroot xorg-xmodmap xorg-xrdb"
+    have(){ pacman -Qq "$1" >/dev/null 2>&1; }
+    add="pacman -S --needed --noconfirm"
+else
+    add=""
+fi
+[ "$BUILD" = 1 ] && need="$need $build"
+if [ -n "$add" ]; then
     missing=""
-    for p in $need $want; do dpkg -s "$p" >/dev/null 2>&1 || missing="$missing $p"; done
+    for p in $need $want; do have "$p" || missing="$missing $p"; done
     if [ -n "$missing" ]; then
         note "installing:$missing"
-        sudo apt-get install -y $missing
+        root $add $missing
     else
         note "all present"
     fi
 else
-    note "no apt here; make sure you have: $need (optional: $want)"
+    note "no apt or pacman here; make sure you have: $need (optional: $want)"
 fi
 
 # ── 2. binaries ─────────────────────────────────────────────────────────
@@ -189,10 +201,10 @@ if [ "$PREFIX" = /usr/local ] && [ "$GREETER" != no ]; then
         sed "s/^GREET_USER=.*/GREET_USER=$me/" "$PREFIX/bin/bolt-greet-auth.example" > "$STAGE/auth"
         inst 0755 "$STAGE/auth" "$PREFIX/bin/bolt-greet-auth"
         for dm in gdm3 gdm lightdm sddm; do
-            if systemctl is-enabled --quiet "$dm" 2>/dev/null; then sudo systemctl disable "$dm"; note "$dm disabled"; fi
+            if systemctl is-enabled --quiet "$dm" 2>/dev/null; then root systemctl disable "$dm"; note "$dm disabled"; fi
         done
-        sudo systemctl enable bolt-greet >/dev/null
-        sudo loginctl enable-linger "$me" 2>/dev/null || true
+        root systemctl enable bolt-greet >/dev/null
+        root loginctl enable-linger "$me" 2>/dev/null || true
         note "bolt-greet enabled for $me; takes effect at next boot"
         note "undo: sudo systemctl disable bolt-greet && sudo systemctl enable gdm3"
     fi

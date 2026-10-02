@@ -61,11 +61,12 @@ D=17
 LOG=$(mktemp -d)
 pids=()
 trap 'for p in "${pids[@]}"; do kill "$p" 2>/dev/null; done' EXIT
-sudo mkdir -p /tmp/.X11-unix && sudo chmod 1777 /tmp/.X11-unix
+# No /tmp/.X11-unix on a clean machine: frame (0.1.36 on) makes it itself.
 
 frame $D --fbtest --noinput >"$LOG/frame" 2>&1 &
 pids+=($!); FRAME=$!
 for _ in 1 2 3 4 5 6 7 8 9 10; do [ -S /tmp/.X11-unix/X$D ] && break; sleep 0.2; done
+check "frame made the socket folder, sticky and open" test "$(stat -c %a /tmp/.X11-unix)" = 1777
 prints "frame answers as an X server" "frame" sh -c "DISPLAY=:$D xdpyinfo | grep 'vendor string'"
 
 DISPLAY=:$D tile --no-autostart >"$LOG/tile" 2>&1 &

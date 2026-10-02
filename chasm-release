@@ -33,6 +33,7 @@ if [ -z "$STAGE" ]; then
 fi
 mkdir -p "$STAGE/bin" "$STAGE/lib/systemd" "$STAGE/share/bare/plugins" "$STAGE/share/xcursors"
 
+[ -f "$ROOT/glyph/glyph.asm" ] || { echo "chasm-release: missing repo $ROOT/glyph (glass includes it)" >&2; exit 1; }
 for r in $REPOS; do
     [ -d "$ROOT/$r" ] || { echo "chasm-release: missing repo $ROOT/$r" >&2; exit 1; }
     make -s -C "$ROOT/$r" >/dev/null

@@ -109,8 +109,9 @@ trap 'rm -rf "$STAGE"' EXIT
 if [ "$BUILD" = 1 ]; then
     SRC=$DEST_HOME/src/chasm
     mkdir -p "$SRC"
-    for r in $REPOS; do
+    for r in glyph $REPOS; do                # glyph: glass includes its source
         if [ -d "$SRC/$r/.git" ]; then git -C "$SRC/$r" pull -q; else git clone -q "https://github.com/isene/$r" "$SRC/$r"; fi
+        [ "$r" = glyph ] && continue          # nothing of its own to install
         note "building $r"
         make -s -C "$SRC/$r" >/dev/null
     done
@@ -162,7 +163,12 @@ fi
 say "configs → $DEST_HOME"
 for rc in tilerc striprc glassrc barerc framerc; do
     if [ -e "$DEST_HOME/.$rc" ]; then note "~/.$rc kept (yours)"
-    else install -m644 "$HERE/config/$rc" "$DEST_HOME/.$rc"; note "~/.$rc installed"; fi
+    elif [ "$PREFIX" = /usr/local ]; then
+        install -m644 "$HERE/config/$rc" "$DEST_HOME/.$rc"; note "~/.$rc installed"
+    else    # the shipped configs name programs under /usr/local/bin
+        sed "s|/usr/local/bin/|$PREFIX/bin/|g" "$HERE/config/$rc" > "$DEST_HOME/.$rc"
+        chmod 644 "$DEST_HOME/.$rc"; note "~/.$rc installed (paths set to $PREFIX/bin)"
+    fi
 done
 mkdir -p "$DEST_HOME/.bare/plugins"
 for p in "$STAGE"/chasm/share/bare/plugins/*; do
@@ -200,6 +206,10 @@ if [ "$PREFIX" = /usr/local ] && [ "$GREETER" != no ]; then
         me=${SUDO_USER:-$USER}
         sed "s/^GREET_USER=.*/GREET_USER=$me/" "$PREFIX/bin/bolt-greet-auth.example" > "$STAGE/auth"
         inst 0755 "$STAGE/auth" "$PREFIX/bin/bolt-greet-auth"
+        # The greeter runs as root before anyone logs in: it reads the
+        # wallpaper through this link, not from a home folder.
+        root mkdir -p "$PREFIX/share/chasm"
+        root ln -sfn "$DEST_HOME/.framebg" "$PREFIX/share/chasm/greeter.bg"
         for dm in gdm3 gdm lightdm sddm; do
             if systemctl is-enabled --quiet "$dm" 2>/dev/null; then root systemctl disable "$dm"; note "$dm disabled"; fi
         done

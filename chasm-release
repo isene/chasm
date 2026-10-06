@@ -79,10 +79,13 @@ TAR=$TMP/chasm-amd64.tar.gz
 tar -czf "$TAR" -C "$TMP" chasm
 (cd "$TMP" && sha256sum chasm-amd64.tar.gz > chasm-amd64.tar.gz.sha256)   # chasm-install checks it
 TAG=r$(date +%Y%m%d)
+NOTES=$(printf 'Prebuilt static amd64 binaries for chasm-install.\n\n```\n%s\n```' "$(cat "$STAGE/VERSIONS")")
 if gh release view "$TAG" -R isene/chasm >/dev/null 2>&1; then
+    # A second release on the same day: new files, and new notes to match.
     gh release upload "$TAG" "$TAR" "$TAR.sha256" -R isene/chasm --clobber
+    gh release edit "$TAG" -R isene/chasm --notes "$NOTES" >/dev/null
 else
     gh release create "$TAG" "$TAR" "$TAR.sha256" -R isene/chasm --latest \
-        --title "CHasm $TAG" --notes "$(printf 'Prebuilt static amd64 binaries for chasm-install.\n\n```\n%s\n```' "$(cat "$STAGE/VERSIONS")")"
+        --title "CHasm $TAG" --notes "$NOTES"
 fi
 echo "published $TAG ($(du -h "$TAR" | cut -f1))"

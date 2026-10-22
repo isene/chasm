@@ -207,7 +207,7 @@ row "Ctrl+Alt+F1..F12"   "$f" "switch virtual terminal"
 hdr "GLASS   ${D}(Alt realm; unbound Alt+keys pass through as Meta)${R}"
 declare -A g=(
     [font_inc]=alt+plus [font_dec]=alt+minus [font_reset]=alt+underscore
-    [bg_cycle]=alt+b [opacity]=alt+t [paste]=alt+v
+    [bg_cycle]=alt+b [opacity]=alt+t [paste]=alt+v [copy_screen]=alt+c
 )
 if [[ -r $HOME/.glassrc ]]; then
     while IFS= read -r line; do
@@ -230,6 +230,7 @@ row "${g[font_reset]}"  "key.font_reset $k" "font size reset"
 row "${g[bg_cycle]}"    "key.bg_cycle $k"   "background colour cycle"
 row "${g[opacity]}"     "key.opacity $k"    "opacity cycle"
 row "${g[paste]}"       "key.paste $k"      "paste PRIMARY (same as Shift+Insert)"
+row "${g[copy_screen]}" "key.copy_screen $k" "copy all text in view to the clipboard"
 g="built into glass"
 row "Ctrl+Shift+V"      "$g" "paste CLIPBOARD"
 row "Shift+Insert"      "$g" "paste PRIMARY"

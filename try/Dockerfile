@@ -26,7 +26,7 @@ WORKDIR /home/you
 # sudo is for the install only, and goes once it is done.
 RUN chasm/chasm-install --no-greeter \
  && rm -rf chasm \
- && sudo sh -c 'printf "<meta http-equiv=refresh content=\"0;url=vnc.html?autoconnect=1&resize=scale\">\n" \
+ && sudo sh -c 'printf "<meta http-equiv=refresh content=\"0;url=vnc.html?autoconnect=1&reconnect=1&reconnect_delay=500&resize=scale\">\n" \
         > /usr/share/novnc/index.html' \
  && sudo rm -rf /var/lib/apt/lists/* /etc/sudoers.d/you
 

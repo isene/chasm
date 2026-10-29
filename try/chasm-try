@@ -1,0 +1,19 @@
+#!/bin/bash
+# chasm-try: the start command of the try image (see try/Dockerfile).
+# frame draws into memory, x11vnc serves that picture on port 5900 inside
+# the container, and websockify hands it to noVNC in the browser on 6080.
+# x11vnc leaves out DAMAGE, XFIXES and RECORD: on frame its first viewer
+# killed it with BadImplementation, and the picture is right without them.
+# -nowf too: its window watch died with BadMatch when the Mod4+? overlay opened.
+# glass -e does no PATH search, so the welcome shell is a full path.
+set -u
+D=1
+frame $D --fbtest --noinput >/tmp/frame.log 2>&1 &
+for _ in $(seq 50); do [ -S /tmp/.X11-unix/X$D ] && break; sleep 0.1; done
+export DISPLAY=:$D
+x11vnc -display :$D -localhost -forever -shared -nopw -quiet -rfbport 5900 \
+    -noxdamage -noxfixes -noxrecord -nowf >/tmp/x11vnc.log 2>&1 &
+websockify --web /usr/share/novnc 6080 localhost:5900 >/tmp/websockify.log 2>&1 &
+echo "CHasm is up: open http://localhost:6080"
+(sleep 1; exec glass -e /bin/sh -c "cat /usr/local/share/chasm-try/welcome; exec bare") &
+exec tile

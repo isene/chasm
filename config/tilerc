@@ -1,6 +1,6 @@
 # tile config — the CHasm default. Edit by hand or with tileconf.
 # Reload: Mod4+Shift+r.  Restart tile in place: Mod4+Shift+x.
-# Mod4 is the Win/Super key. Mod4+? (Mod4+Shift+plus) shows every key.
+# Mod4 is the Win/Super key. Mod4+? shows every key, on any keyboard layout.
 
 # === Autostart (once at start, not on reload) ===
 exec tile-strip                      # status bar; segments in ~/.striprc
@@ -100,7 +100,7 @@ bind Mod4+t             exec sh -c 'pkill -x spot || exec spot ocr'
 # === Popups ===
 bind Mod4+o             overview                 # every window, j/k, Enter, Esc
 bind Mod4+f             fullscreen               # focused window takes the whole screen
-bind Mod4+Shift+plus    keys                     # key reference, live from chasm-keys
+bind Mod4+Shift+?       keys                     # key reference, live from chasm-keys
 
 # === Bar ===
 # tile's own bar is off; strip draws the workspace pips and the tabs.

@@ -42,7 +42,7 @@
       <img src="img/screenshot.png" alt="CHasm desktop screenshot" style="width:100%; max-width:1200px; border-radius:14px; border:1px solid #26263a; display:block; margin:0 auto;">
       <p class="caption" style="text-align:center; margin-top:1rem; color:var(--fg-mute); font-size:0.9rem;">
         Every binary on screen is x86_64 assembly. <strong>tile</strong>
-        holds the layout. <strong>strip</strong> drives the status row,
+        lays out the windows. <strong>strip</strong> drives the status row,
         fed by the asmites in <strong>chasm-bits</strong>.
         <strong>glass</strong> renders each pane (pseudo-transparency
         picks up the wallpaper). <strong>bare</strong> is the shell
@@ -450,6 +450,12 @@
         server, with no Xorg anywhere. Inside, <code>Mod4+Return</code>
         opens a terminal and <code>Mod4+?</code> shows every key.
       </p>
+      <p class="section-intro" style="margin-top:1.5rem;">
+        Or try it in a browser tab, with nothing installed. Run this,
+        then open <code>http://localhost:6080</code>. It is slower than
+        real hardware, and on a Mac, Mod4 is Cmd.
+      </p>
+      <pre><span class="cmd">docker run --rm -p 127.0.0.1:6080:6080 ghcr.io/isene/chasm-try</span></pre>
       <p class="section-intro" style="margin-top:1.5rem;">
         Prefer to build? Each tool is one .asm file (or a small set),
         assembled with NASM and linked with ld. No autotools, no

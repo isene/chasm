@@ -1,0 +1,17 @@
+
+  CHasm: everything on this screen is x86_64 assembly, X server included.
+
+  Mod4 is the Super (Windows) key. On a Mac it is Cmd, but Cmd+Q and
+  Cmd+W go to the browser. Your own desktop may catch some Mod4 keys too.
+
+    Mod4+?          every key, on one screen
+    Mod4+Return     a new terminal
+    Mod4+1 .. 0     workspaces
+    Mod4+q          close the window
+    Mod4+w          next wallpaper
+    Alt+t           see-through terminal
+
+  Try  show ~/.tilerc  to read the window manager's whole config.
+
+  More: https://isene.org/chasm/
+

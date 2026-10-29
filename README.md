@@ -105,6 +105,17 @@ and Arch machines by `test/install-check.sh`.
 downloading (needs nasm, ld, gcc). `./chasm-install --help` lists the
 rest.
 
+### In a browser, with nothing installed
+
+```bash
+docker run --rm -p 127.0.0.1:6080:6080 ghcr.io/isene/chasm-try
+```
+
+Then open http://localhost:6080. That is the same desktop, frame
+included, drawn in memory and sent to the browser tab. It is slower than
+on real hardware. Mod4 is the Super key; on a Mac it is Cmd, but Cmd+Q
+and Cmd+W go to the browser. [`try/`](try) has how it is built.
+
 ## The keys
 
 The suite shares one keyboard scheme: plain **Mod4** is the desktop

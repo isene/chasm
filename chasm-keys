@@ -196,6 +196,7 @@ while IFS= read -r line; do
     esac
 done 2>/dev/null < "$HOME/.framerc"
 f="built into frame"
+row "Mod4+space"         "$f" "workspace overview (arrows, digits, Enter)"
 row "Mod4+n"             "$f" "night-light toggle (warm)"
 row "Mod4+b"             "$f" "sunlight toggle (contrast)"
 row "Mod4+z"             "$f" "magnifier lens toggle"

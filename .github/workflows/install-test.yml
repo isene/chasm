@@ -30,7 +30,7 @@ jobs:
             apt-get update
             apt-get install -y sudo git curl ca-certificates
           else
-            pacman -Sy --noconfirm sudo git curl
+            pacman -Syu --noconfirm sudo git curl
           fi
           useradd -m tester
           echo 'tester ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/tester
